@@ -1,0 +1,202 @@
+/* pages/index/index.wxss */
+/* 整体背景与容器样式 */
+.container {
+  background-color: #f0f8f4;
+  padding: 20rpx;
+  min-height: calc(100vh - 90rpx);
+  text-align: left;
+}
+
+/* 发现进度区域 */
+.discovery-progress {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.progress-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.progress-bar {
+  height: 20rpx;
+  background-color: #e0e0e0;
+  border-radius: 10rpx;
+  overflow: hidden;
+  margin-bottom: 20rpx;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #4CAF50;
+  border-radius: 10rpx;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 昆虫收藏区域 */
+.insects-collection {
+  margin-bottom: 30rpx;
+  text-align: left;
+}
+
+.collection-header {
+  margin-bottom: 30rpx;
+}
+
+.collection-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #4CAF50;
+  text-align: left;
+}
+
+/* 网格布局容器 - 3列布局，左对齐 */
+.insects-grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+  justify-content: flex-start;
+  margin: 0 -12rpx;
+  text-align: left;
+}
+
+/* 昆虫卡片样式 - 宽度根据屏幕自适应3列 */
+.insect-item {
+  position: relative;
+  width: calc(33.333% - 24rpx);
+  min-width: 200rpx;
+  margin: 0 12rpx 24rpx;
+  box-sizing: border-box;
+}
+
+.insect-card {
+  position: relative;
+  background: white;
+  border-radius: 20rpx;
+  padding: 0;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  width: 100%;
+}
+
+/* 新发现标签 - 绿色背景 */
+.new-badge {
+  position: absolute;
+  top: 16rpx;
+  left: 16rpx;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background-color: #4CAF50;
+  color: white;
+  font-size: 28rpx;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+/* 昆虫图片 - 强制正方形比例 */
+.insect-image-wrapper {
+  width: 100%;
+  padding-bottom: 100%;
+  position: relative;
+  background-color: #f0f8f4;
+}
+
+.insect-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 昆虫名称 - 绿色文字 */
+.insect-name {
+  font-size: 30rpx;
+  padding: 16rpx 0;
+  font-weight: 500;
+  color: #4CAF50;
+  text-align: center;
+  width: 100%;
+}
+
+/* 空状态样式 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 120rpx;
+  text-align: center;
+}
+
+.empty-image {
+  width: 320rpx;
+  height: 320rpx;
+  opacity: 0.7;
+  margin-bottom: 36rpx;
+}
+
+.empty-text {
+  font-size: 36rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+}
+
+.empty-subtext {
+  font-size: 30rpx;
+  color: #999;
+  margin-bottom: 48rpx;
+}
+
+/* 主按钮样式 */
+.primary-btn {
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 8rpx;
+  padding: 16rpx 32rpx;
+  font-size: 32rpx;
+  border: none;
+}
+
+.primary-btn:active {
+  background-color: #45a049;
+}
+
+/* 滚动条样式优化 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* 响应式调整 */
+@media (max-width: 600rpx) {
+  .insects-grid {
+    margin: 0 -10rpx;
+  }
+  
+  .insect-item {
+    width: calc(33.333% - 20rpx);
+    min-width: 160rpx;
+    margin: 0 10rpx 20rpx;
+  }
+}

@@ -1,0 +1,83 @@
+/**app.wxss**/
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+/* 通用样式 */
+.page-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  margin: 20rpx 0;
+  color: #333;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.mt-20 {
+  margin-top: 20rpx;
+}
+
+.mb-20 {
+  margin-bottom: 20rpx;
+}
+
+.ml-20 {
+  margin-left: 20rpx;
+}
+
+.mr-20 {
+  margin-right: 20rpx;
+}
+
+/* 按钮样式 */
+.primary-btn {
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 8rpx;
+  padding: 16rpx 32rpx;
+  font-size: 32rpx;
+}
+
+.secondary-btn {
+  background-color: #f8f8f8;
+  color: #333;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  padding: 16rpx 32rpx;
+  font-size: 32rpx;
+}
+
+/* 卡片样式 */
+.card {
+  background: #fff;
+  border-radius: 12rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+}

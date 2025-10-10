@@ -1,0 +1,150 @@
+<!-- pages/camera/camera.wxml -->
+<view class="container">
+  <!-- 移除页面标题文本 -->
+  
+  <!-- 拍照区域 - 优化布局，减少空白 -->
+  <view class="camera-section" wx:if="{{!hasResult}}">
+    <!-- 调整相机高度，更好地利用屏幕空间 -->
+    <view class="camera-container">
+      <camera 
+        wx:if="{{cameraEnabled}}" 
+        device-position="back" 
+        flash="off" 
+        binderror="error" 
+        style="width: 100%; height: 70vh;"
+      ></camera>
+      <view wx:if="{{!cameraEnabled}}" class="camera-placeholder" bindtap="enableCamera">
+        <view class="placeholder-content">
+          <image src="/images/icons/camera.svg" class="placeholder-icon"></image>
+          <text class="placeholder-text">点击取景框开启相机</text>
+          <text class="placeholder-subtext">保护隐私，相机默认关闭</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 添加居中的提示信息 -->
+    <view class="camera-guide">
+      <text>请将昆虫置于取景框中央</text>
+    </view>
+    
+    <!-- 调整按钮布局，使界面更紧凑 -->
+    <view class="camera-actions optimized">
+      <button class="primary-btn" bindtap="takePhoto">拍照识别</button>
+      <button class="secondary-btn" bindtap="chooseImage">从相册选择</button>
+    </view>
+  </view>
+    
+    <!-- 结果展示区域 -->
+  <view class="result-section" wx:if="{{hasResult}}">
+    <!-- 图片预览（支持自由缩放和移动） -->
+      <view class="image-preview-container">
+        <image 
+          class="preview-image"
+          src="{{tempImagePath}}"
+          mode="widthFix"
+          bindload="imageLoad"
+          binderror="imageError"
+          bindtouchstart="touchStart"
+          catchtouchmove="touchMove"
+          bindtouchend="touchEnd"
+          bindtouchcancel="touchCancel"
+          style="transform: scale({{scale}}) translate({{imagePosition.x}}px, {{imagePosition.y}}px); transform-origin: center center;"
+        />
+        
+        <view class="zoom-hint">
+          双指捏合/张开可缩放图片，单指拖动可移动图片。将昆虫调整至中央位置后，点击'再次识别'按钮重新识别
+        </view>
+      </view>
+    
+    <!-- 识别结果 -->
+    <view class="recognition-results">
+      <view class="result-title">识别结果</view>
+      
+      <block wx:if="{{recognitionResults.length > 0}}">
+        <view 
+          class="result-item {{selectedIndex === index ? 'first-result' : ''}}" 
+          wx:for="{{recognitionResults}}" 
+          wx:for-index="idx"
+          wx:key="index"
+          data-index="{{idx}}"
+          bindtap="selectResult"
+        >
+          <view class="result-name">{{item.name}}</view>
+          <view class="result-confidence">可信度: {{item.scorePercent}}%</view>
+          <view class="result-category">类别: {{item.category}}</view>
+          <view class="checkmark" wx:if="{{selectedIndex === idx}}">✓</view>
+        </view>
+      </block>
+      
+      <!-- 无结果或识别失败提示 -->
+      <view class="no-results" wx:if="{{recognitionResults.length === 0 || isNotAnimal}}">
+        <text wx:if="{{isNotAnimal}}">识别为"非动物"，请尝试：</text>
+        <text wx:else>未识别到昆虫，请尝试：</text>
+        <view class="suggestions">
+          <text>1. 重新拍摄更清晰的照片</text>
+          <text>2. 确保昆虫在照片中心位置</text>
+          <text>3. 手动输入昆虫名称</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 错误信息显示 -->
+    <view class="error-message" wx:if="{{saveError}}">
+      <text>{{saveError}}</text>
+    </view>
+    
+    <!-- 操作按钮 -->
+    <view class="action-buttons" wx:if="{{recognitionResults.length > 0}}">
+      <button class="primary-btn" bindtap="confirmSelection" loading="{{isSaving}}">确认发现</button>
+      <button class="secondary-btn" bindtap="showManualInputDialog">手动输入</button>
+      <button class="secondary-btn" bindtap="recognizeAgain">再次识别</button>
+      <button class="secondary-btn" bindtap="reset">重新拍摄</button>
+    </view>
+
+    <!-- 重新识别按钮 -->
+    <view class="action-buttons" wx:if="{{recognitionResults.length === 0 || isNotAnimal}}">
+      <button class="primary-btn" bindtap="showManualInputDialog">手动输入</button>
+      <button class="secondary-btn" bindtap="recognizeAgain">再次识别</button>
+      <button class="secondary-btn" bindtap="reset">重新拍摄</button>
+    </view>
+    
+    <!-- 手动输入对话框 -->
+    <view class="modal" wx:if="{{showManualInput}}">
+      <view class="modal-content">
+        <view class="modal-header">
+          <text>手动输入昆虫名称</text>
+          <text class="close" bindtap="hideManualInputDialog">×</text>
+        </view>
+        <view class="modal-body">
+          <input 
+            class="manual-input" 
+            placeholder="请输入昆虫名称（如：眼斑螳螂）" 
+            value="{{manualInsectName}}"
+            bindinput="onManualInputChange"
+            focus
+          />
+          
+          <!-- 建议列表 -->
+          <view class="suggestions-list" wx:if="{{showSuggestions && manualInsectName.length > 0}}">
+            <view 
+              class="suggestion-item" 
+              wx:for="{{filteredSuggestions}}" 
+              wx:key="index"
+              data-name="{{item}}"
+              bindtap="selectSuggestion"
+            >
+              {{item}}
+            </view>
+            <view class="no-suggestions" wx:if="{{filteredSuggestions.length === 0}}">
+              无匹配建议
+            </view>
+          </view>
+        </view>
+        <view class="modal-footer">
+          <button class="secondary-btn" bindtap="hideManualInputDialog">取消</button>
+          <button class="primary-btn" bindtap="onManualInputConfirm">确定</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,9 @@
+{
+  "timeout": 30000,
+  "permissions": {
+    "openapi": [
+      "wxacode.get",
+      "templateMessage.send"
+    ]
+  }
+}

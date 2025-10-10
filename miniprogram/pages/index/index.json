@@ -1,0 +1,7 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "我的昆虫图鉴",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#f8f8f8",
+  "backgroundTextStyle": "dark"
+}

@@ -1,0 +1,285 @@
+/* 昆虫发现编辑页面样式 */
+.edit-discovery-container {
+  background-color: #f8f8f8;
+  min-height: 100vh;
+}
+
+/* 顶部导航栏 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  background-color: white;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left,
+.header-right {
+  width: 100rpx;
+  text-align: center;
+}
+
+.header-center {
+  flex: 1;
+  text-align: center;
+}
+
+.page-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.cancel-btn {
+  font-size: 32rpx;
+  color: #666;
+}
+
+.save-btn {
+  font-size: 32rpx;
+  color: #4CAF50;
+  font-weight: bold;
+}
+
+/* 图片预览区域 */
+.image-preview-section {
+  background-color: white;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.insect-image {
+  width: 100%;
+  height: 400rpx;
+  background-color: #f0f0f0;
+  border-radius: 16rpx;
+}
+
+.location-info {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+  padding: 16rpx 24rpx;
+  background-color: #e8f5e9;
+  border-radius: 60rpx;
+}
+
+.location-icon {
+  font-size: 32rpx;
+  margin-right: 10rpx;
+}
+
+.location-text {
+  font-size: 28rpx;
+  color: #4CAF50;
+  max-width: 500rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 信息编辑区域 */
+.info-edit-section {
+  background-color: white;
+  padding: 30rpx;
+}
+
+.form-item {
+  margin-bottom: 30rpx;
+}
+
+.label {
+  display: block;
+  font-size: 32rpx;
+  color: #333;
+  margin-bottom: 16rpx;
+  font-weight: bold;
+}
+
+.input {
+  width: 100%;
+  background-color: #f8f9fa;
+  border-radius: 10rpx;
+  padding: 24rpx;
+  font-size: 32rpx;
+  color: #333;
+  box-sizing: border-box;
+}
+
+.textarea {
+  width: 100%;
+  background-color: #f8f9fa;
+  border-radius: 10rpx;
+  padding: 24rpx;
+  font-size: 32rpx;
+  color: #333;
+  box-sizing: border-box;
+  min-height: 200rpx;
+}
+
+/* 天气选择器 */
+.weather-selector {
+  display: flex;
+  justify-content: space-between;
+}
+
+.weather-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 10rpx;
+  background-color: #f8f9fa;
+  border-radius: 10rpx;
+  margin: 0 10rpx;
+}
+
+.weather-option:first-child {
+  margin-left: 0;
+}
+
+.weather-option:last-child {
+  margin-right: 0;
+}
+
+.weather-option.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.weather-icon {
+  width: 60rpx;
+  height: 60rpx;
+  margin-bottom: 10rpx;
+}
+
+/* 季节选择器 */
+.season-selector {
+  display: flex;
+  justify-content: space-between;
+}
+
+.season-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 10rpx;
+  background-color: #f8f9fa;
+  border-radius: 10rpx;
+  margin: 0 10rpx;
+}
+
+.season-option:first-child {
+  margin-left: 0;
+}
+
+.season-option:last-child {
+  margin-right: 0;
+}
+
+.season-option.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.season-icon {
+  width: 60rpx;
+  height: 60rpx;
+  margin-bottom: 10rpx;
+}
+
+/* 稀有程度选择器 */
+.rare-selector {
+  display: flex;
+  justify-content: space-between;
+}
+
+.rare-option {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24rpx;
+  background-color: #f8f9fa;
+  border-radius: 10rpx;
+  margin: 0 10rpx;
+  font-size: 32rpx;
+}
+
+.rare-option:first-child {
+  margin-left: 0;
+}
+
+.rare-option:last-child {
+  margin-right: 0;
+}
+
+.rare-option.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+/* 加载提示 */
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.loading-content {
+  background-color: white;
+  padding: 40rpx;
+  border-radius: 16rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 200rpx;
+}
+
+.loading-spinner {
+  width: 50rpx;
+  height: 50rpx;
+  border: 6rpx solid #f3f3f3;
+  border-top: 6rpx solid #4CAF50;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20rpx;
+}
+
+.loading-text {
+  font-size: 30rpx;
+  color: #666;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 适配不同屏幕尺寸 */
+@media screen and (max-width: 375px) {
+  .insect-image {
+    height: 350rpx;
+  }
+  
+  .weather-icon,
+  .season-icon {
+    width: 50rpx;
+    height: 50rpx;
+  }
+}

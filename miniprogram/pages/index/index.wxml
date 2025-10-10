@@ -1,0 +1,36 @@
+<!-- pages/index/index.wxml -->
+<view class="container">
+  
+  <!-- 昆虫收藏区域 -->
+  <view class="insects-collection" wx:if="{{recentInsects.length > 0}}">
+    <view class="collection-header">
+      <text class="collection-title">我的发现（{{collectedCount}}）</text>
+    </view>
+    <view class="insects-grid">
+        <view class="insect-item" wx:for="{{recentInsects}}" wx:key="id" bindtap="goToInsectDetail" bindlongpress="onInsectLongPress" data-id="{{item.id}}" data-index="{{index}}" data-name="{{item.name}}">
+          <view class="insect-card">
+            <!-- 新发现标签 -->
+            <view class="new-badge" wx:if="{{item.isNew}}">新</view>
+            <view class="insect-image-wrapper">
+              <image 
+                class="insect-image" 
+                src="{{item.imageUrl}}"
+                mode="aspectFill"
+                binderror="onImageError"
+                data-index="{{index}}"
+              ></image>
+            </view>
+            <view class="insect-name">{{item.name}}</view>
+          </view>
+        </view>
+      </view>
+  </view>
+  
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{collectedCount === 0}}">
+    <image src="/images/empty_insect.png" class="empty-image"></image>
+    <view class="empty-text">还没有发现任何昆虫</view>
+    <view class="empty-subtext">快去探索自然，发现昆虫吧！</view>
+    <button class="primary-btn" bindtap="goToCamera">开始探索</button>
+  </view>
+</view>

@@ -1,0 +1,436 @@
+/* pages/camera/camera.wxss */
+.container {
+  padding: 30rpx;
+  background-color: #f8f8f8;
+  min-height: 100vh;
+}
+
+.page-title {
+  font-size: 40rpx;
+  font-weight: bold;
+  margin-bottom: 30rpx;
+  text-align: center;
+  color: #333;
+}
+
+/* 拍照区域样式 */
+.camera-section {
+  width: 100%;
+  margin-bottom: 20rpx;
+  background-color: #000;
+  border-radius: 10rpx;
+  overflow: hidden;
+}
+
+/* 相机容器 */
+.camera-container {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+}
+
+/* 相机占位符 */
+.camera-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f5f5f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 10rpx;
+}
+
+/* 占位符内容 */
+.placeholder-content {
+  text-align: center;
+  color: #666;
+}
+
+/* 占位符图标 */
+.placeholder-icon {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 20rpx;
+  opacity: 0.5;
+}
+
+/* 占位符文本 */
+.placeholder-text {
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+/* 占位符副标题 */
+.placeholder-subtext {
+  font-size: 28rpx;
+  color: #999;
+  display: block;
+}
+
+.camera-actions {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 40rpx;
+}
+
+/* 优化后的按钮布局样式 */
+.camera-actions.optimized {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20rpx;
+  gap: 20rpx;
+}
+
+.camera-actions.optimized .primary-btn {
+  flex: 1;
+  margin-right: 10rpx;
+}
+
+.camera-actions.optimized .secondary-btn {
+  flex: 1;
+  margin-left: 10rpx;
+}
+
+/* 相机引导提示样式 */
+.camera-guide {
+  text-align: center;
+  margin: 20rpx 0;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.primary-btn {
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 8rpx;
+  padding: 16rpx 32rpx;
+  font-size: 32rpx;
+}
+
+.secondary-btn {
+  background-color: #f8f8f8;
+  color: #333;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  padding: 16rpx 32rpx;
+  font-size: 32rpx;
+}
+
+.result-section {
+  width: 100%;
+}
+
+.image-preview-container {
+  position: relative;
+  width: 100%;
+  height: 500rpx; /* 固定高度 */
+  background-color: #000;
+  border-radius: 16rpx;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30rpx;
+  z-index: 1; /* 确保在识别列表上方 */
+  /* 性能优化属性 */
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.preview-image {
+  user-select: none; /* 防止按压时出现文本选择效果 */
+  -webkit-user-select: none;
+  /* 硬件加速，减少闪烁 */
+  transform: translateZ(0);
+  will-change: transform; /* 提示浏览器此元素将进行变换，提前优化渲染 */
+}
+
+.zoom-hint {
+  position: absolute;
+  bottom: 20rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  pointer-events: none;
+}
+
+.recognition-results {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 30rpx;
+}
+
+.result-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+  color: #333;
+}
+
+.result-item {
+  border: 1rpx solid #eee;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  position: relative;
+}
+
+.result-item.first-result {
+  border-color: #4CAF50;
+  background-color: #f9fff9;
+}
+
+.result-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.result-confidence {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+}
+
+.result-category {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.checkmark {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: #4CAF50;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24rpx;
+}
+
+.no-results {
+  text-align: center;
+  padding: 40rpx;
+  color: #999;
+}
+
+.suggestions {
+  margin-top: 20rpx;
+}
+
+.suggestions text {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  margin: 8rpx 0;
+}
+
+.error-message {
+  background: #ffeeee;
+  border: 1rpx solid #ffcccc;
+  border-radius: 8rpx;
+  padding: 20rpx;
+  margin: 20rpx 0;
+  color: #ff3333;
+  font-size: 26rpx;
+}
+
+.error-message text {
+  color: #ff3333;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.action-buttons button {
+  flex: 1;
+  min-width: 200rpx;
+}
+
+/* 手动输入模态框样式 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16rpx;
+  width: 80%;
+  max-width: 600rpx;
+}
+
+.modal-header {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header text:first-child {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.close {
+  font-size: 40rpx;
+  color: #999;
+}
+
+.modal-body {
+  padding: 30rpx;
+}
+
+.manual-input {
+  border: 2rpx solid #4CAF50;
+  border-radius: 8rpx;
+  padding: 20rpx;
+  font-size: 32rpx;
+  width: 100%;
+  box-sizing: border-box;
+  height: 80rpx;
+}
+
+/* 建议列表样式 */
+.suggestions-list {
+  max-height: 300rpx;
+  overflow-y: auto;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  margin-top: 20rpx;
+}
+
+.suggestion-item {
+  padding: 20rpx;
+  border-bottom: 1rpx solid #eee;
+  font-size: 28rpx;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:active {
+  background-color: #f0f0f0;
+}
+
+.no-suggestions {
+  padding: 20rpx;
+  color: #999;
+  text-align: center;
+}
+
+.modal-footer {
+  padding: 30rpx;
+  display: flex;
+  justify-content: flex-end;
+  gap: 20rpx;
+}
+
+.modal-footer button {
+  min-width: 120rpx;
+}
+
+/* 加载状态样式 */
+.loading-text {
+  text-align: center;
+  padding: 40rpx;
+  color: #666;
+}
+
+/* 响应式调整 */
+@media (max-width: 600rpx) {
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-buttons button {
+    width: 100%;
+    margin-bottom: 20rpx;
+  }
+  
+  .modal-content {
+    width: 90%;
+  }
+  
+  .manual-input {
+    font-size: 28rpx;
+    height: 70rpx;
+  }
+}
+
+/* 局部识别框相关样式 */
+.recognition-frame {
+  z-index: 10;
+  user-select: none;
+}
+
+.resize-handle {
+  position: absolute;
+  width: 40rpx;
+  height: 40rpx;
+  background-color: #4CAF50;
+  border-radius: 50%;
+  z-index: 20;
+}
+
+.top-left {
+  left: -20rpx;
+  top: -20rpx;
+}
+
+.top-right {
+  right: -20rpx;
+  top: -20rpx;
+}
+
+.bottom-left {
+  left: -20rpx;
+  bottom: -20rpx;
+}
+
+.bottom-right {
+  right: -20rpx;
+  bottom: -20rpx;
+}
+
+.frame-confirm-btn {
+  position: absolute;
+  bottom: -60rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4CAF50;
+  color: white;
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}

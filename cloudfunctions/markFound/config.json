@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "openapi": [],
+    "cloudbase_auth": true,
+    "database": {
+      "collectionPermissions": [
+        {
+          "collection": "insects",
+          "read": true,
+          "write": true
+        },
+        {
+          "collection": "user_insects",
+          "read": true,
+          "write": true
+        }
+      ]
+    }
+  }
+}

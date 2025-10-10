@@ -1,0 +1,118 @@
+<!-- 昆虫发现编辑页面 -->
+<view class="edit-discovery-container">
+  <!-- 顶部导航栏 -->
+  <view class="header">
+    <view class="header-left">
+      <text class="cancel-btn" bindtap="cancelEdit">取消</text>
+    </view>
+    <view class="header-center">
+      <text class="page-title">编辑发现</text>
+    </view>
+    <view class="header-right">
+      <text class="save-btn" bindtap="saveDiscovery">保存</text>
+    </view>
+  </view>
+
+  <!-- 图片预览区域 -->
+  <view class="image-preview-section">
+    <image class="insect-image" src="{{imagePath}}" mode="aspectFit"></image>
+    <view class="location-info" wx:if="{{showLocationInfo}}">
+      <view class="location-icon">📍</view>
+      <text class="location-text">{{locationName || '未知位置'}}</text>
+    </view>
+  </view>
+
+  <!-- 昆虫信息编辑区域 -->
+  <view class="info-edit-section">
+    <!-- 昆虫名称 -->
+    <view class="form-item">
+      <text class="label">昆虫名称</text>
+      <input class="input" placeholder="请输入昆虫名称" value="{{insectName}}" bindinput="onNameInput"></input>
+    </view>
+
+    <!-- 发现日期 -->
+    <view class="form-item">
+      <text class="label">发现日期</text>
+      <input class="input" type="date" value="{{discoveryDate}}" bindinput="onDateInput"></input>
+    </view>
+
+    <!-- 发现时间 -->
+    <view class="form-item">
+      <text class="label">发现时间</text>
+      <input class="input" type="time" value="{{discoveryTime}}" bindinput="onTimeInput"></input>
+    </view>
+
+    <!-- 天气状况 -->
+    <view class="form-item">
+      <text class="label">天气状况</text>
+      <view class="weather-selector">
+        <view class="weather-option {{weather === 'sunny' ? 'active' : ''}}" bindtap="selectWeather" data-weather="sunny">
+          <image class="weather-icon" src="/images/icons/sun.svg"></image>
+          <text>晴朗</text>
+        </view>
+        <view class="weather-option {{weather === 'cloudy' ? 'active' : ''}}" bindtap="selectWeather" data-weather="cloudy">
+          <image class="weather-icon" src="/images/icons/cloud.svg"></image>
+          <text>多云</text>
+        </view>
+        <view class="weather-option {{weather === 'rainy' ? 'active' : ''}}" bindtap="selectWeather" data-weather="rainy">
+          <image class="weather-icon" src="/images/icons/rain.svg"></image>
+          <text>下雨</text>
+        </view>
+        <view class="weather-option {{weather === 'windy' ? 'active' : ''}}" bindtap="selectWeather" data-weather="windy">
+          <image class="weather-icon" src="/images/icons/wind.svg"></image>
+          <text>大风</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 季节 -->
+    <view class="form-item">
+      <text class="label">季节</text>
+      <view class="season-selector">
+        <view class="season-option {{season === 'spring' ? 'active' : ''}}" bindtap="selectSeason" data-season="spring">
+          <image class="season-icon" src="/images/icons/season.svg"></image>
+          <text>春季</text>
+        </view>
+        <view class="season-option {{season === 'summer' ? 'active' : ''}}" bindtap="selectSeason" data-season="summer">
+          <image class="season-icon" src="/images/icons/season.svg"></image>
+          <text>夏季</text>
+        </view>
+        <view class="season-option {{season === 'autumn' ? 'active' : ''}}" bindtap="selectSeason" data-season="autumn">
+          <image class="season-icon" src="/images/icons/season.svg"></image>
+          <text>秋季</text>
+        </view>
+        <view class="season-option {{season === 'winter' ? 'active' : ''}}" bindtap="selectSeason" data-season="winter">
+          <image class="season-icon" src="/images/icons/season.svg"></image>
+          <text>冬季</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 观察笔记 -->
+    <view class="form-item">
+      <text class="label">观察笔记</text>
+      <textarea class="textarea" placeholder="请输入您的观察笔记..." value="{{notes}}" bindinput="onNotesInput" auto-height></textarea>
+    </view>
+
+    <!-- 是否稀有 -->
+    <view class="form-item">
+      <text class="label">稀有程度</text>
+      <view class="rare-selector">
+        <view class="rare-option {{isRare === false ? 'active' : ''}}" bindtap="selectRare" data-rare="false">
+          <text>普通</text>
+        </view>
+        <view class="rare-option {{isRare === true ? 'active' : ''}}" bindtap="selectRare" data-rare="true">
+          <text>稀有</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载提示 -->
+  <view class="loading-mask" wx:if="{{isLoading}}">
+    <view class="loading-content">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">{{loadingText}}</text>
+    </view>
+  </view>
+</view>

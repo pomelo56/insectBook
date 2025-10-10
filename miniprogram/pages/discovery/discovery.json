@@ -1,0 +1,9 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "我的发现地图",
+  "navigationBarBackgroundColor": "#4CAF50",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true,
+  "backgroundColor": "#f8f8f8",
+  "backgroundTextStyle": "dark"
+}

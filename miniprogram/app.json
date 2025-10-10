@@ -1,0 +1,47 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/camera/camera",
+    "pages/insect-detail/insect-detail",
+    "pages/badges/badges",
+    "pages/discovery/discovery",
+    "pages/edit-discovery/edit-discovery"
+  ],
+  "window": {
+    "backgroundColor": "#F6F6F6",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#4CAF50",
+    "navigationBarTitleText": "昆虫图鉴",
+    "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "color": "#7A7E83",
+    "selectedColor": "#4CAF50",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+          "pagePath": "pages/index/index",
+          "text": "我的图鉴",
+          "iconPath": "images/icons/home.png",
+          "selectedIconPath": "images/icons/home-active.png"
+        },
+        {
+          "pagePath": "pages/camera/camera",
+          "text": "发现昆虫",
+          "iconPath": "images/icons/goods.png",
+          "selectedIconPath": "images/icons/goods-active.png"
+        }
+    ]
+  },
+  "permission": {
+    "scope.camera": {
+      "desc": "需要使用相机功能拍摄昆虫照片"
+    }
+  },
+  "sitemapLocation": "sitemap.json",
+  "useExtendedLib": {
+    "weui": true
+  },
+  "componentFramework": "glass-easel"
+}

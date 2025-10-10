@@ -1,0 +1,28 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景圆 -->
+  <circle cx="60" cy="60" r="55" fill="#F3E5F5"/>
+  <!-- 地球轮廓 -->
+  <circle cx="60" cy="60" r="45" stroke="#7B1FA2" stroke-width="2" fill="#9C27B0"/>
+  <!-- 地球线条 -->
+  <path d="M30 60H90" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+  <path d="M40 45H80" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+  <path d="M40 75H80" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+  <!-- 蝴蝶1 -->
+  <path d="M40 40C35 35 25 35 25 45C25 55 35 55 40 50" stroke="#E1BEE7" stroke-width="2" fill="#BA68C8"/>
+  <path d="M40 50C45 55 55 55 55 45C55 35 45 35 40 40" stroke="#E1BEE7" stroke-width="2" fill="#9575CD"/>
+  <!-- 蝴蝶2 -->
+  <path d="M70 70C65 65 55 65 55 75C55 85 65 85 70 80" stroke="#E1BEE7" stroke-width="2" fill="#8E24AA"/>
+  <path d="M70 80C75 85 85 85 85 75C85 65 75 65 70 70" stroke="#E1BEE7" stroke-width="2" fill="#7B1FA2"/>
+  <!-- 蜻蜓 -->
+  <ellipse cx="85" cy="40" rx="8" ry="15" fill="#4FC3F7"/>
+  <path d="M93 40C98 35 100 30 100 40C100 50 98 45 93 40" stroke="#29B6F6" stroke-width="2" fill="#29B6F6"/>
+  <path d="M77 40C72 35 70 30 70 40C70 50 72 45 77 40" stroke="#29B6F6" stroke-width="2" fill="#29B6F6"/>
+  <!-- 蚂蚁 -->
+  <circle cx="35" cy="85" r="5" fill="#616161"/>
+  <rect x="40" y="83" width="10" height="4" rx="2" fill="#424242"/>
+  <path d="M50 85C55 80 55 85 55 90" stroke="#616161" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M50 85C55 90 55 85 55 80" stroke="#616161" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- 放大镜 -->
+  <circle cx="80" cy="30" r="10" stroke="#AA00FF" stroke-width="2" fill="white"/>
+  <path d="M90 20L100 10" stroke="#AA00FF" stroke-width="2" stroke-linecap="round"/>
+</svg>

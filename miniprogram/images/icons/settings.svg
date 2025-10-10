@@ -1,0 +1,13 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 设置图标 -->
+  <circle cx="20" cy="20" r="18" fill="none" stroke="white" stroke-width="2"/>
+  <circle cx="20" cy="20" r="5" fill="white"/>
+  <path d="M20 5V3" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M20 37V35" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M35 20H37" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M3 20H5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M30 10L32.1213 7.87868" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M7.87868 32.1213L10 30" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M30 30L32.1213 32.1213" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  <path d="M7.87868 7.87868L10 10" stroke="white" stroke-width="2" stroke-linecap="round"/>
+</svg>

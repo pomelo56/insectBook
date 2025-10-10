@@ -1,0 +1,27 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景圆 -->
+  <circle cx="60" cy="60" r="55" fill="#FFF8E1"/>
+  <!-- 帽子 -->
+  <path d="M30 60V50C30 40 40 35 60 35C80 35 90 40 90 50V60" fill="#795548"/>
+  <path d="M40 60H80" stroke="#5D4037" stroke-width="2"/>
+  <!-- 昆虫头部 -->
+  <circle cx="60" cy="45" r="15" fill="#F9A825"/>
+  <!-- 昆虫眼睛 -->
+  <circle cx="52" cy="40" r="5" fill="white"/>
+  <circle cx="68" cy="40" r="5" fill="white"/>
+  <circle cx="52" cy="40" r="2" fill="black"/>
+  <circle cx="68" cy="40" r="2" fill="black"/>
+  <!-- 昆虫身体 -->
+  <rect x="50" y="60" width="20" height="20" rx="10" fill="#F57C00"/>
+  <!-- 昆虫背部图案 -->
+  <path d="M50 65H70" stroke="#E65100" stroke-width="2" stroke-linecap="round"/>
+  <path d="M50 70H70" stroke="#E65100" stroke-width="2" stroke-linecap="round"/>
+  <!-- 昆虫腿部 -->
+  <path d="M55 60C50 55 45 50 40 55" stroke="#E65100" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M65 60C70 55 75 50 80 55" stroke="#E65100" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M55 80C50 85 45 90 40 85" stroke="#E65100" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M65 80C70 85 75 90 80 85" stroke="#E65100" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 触角 -->
+  <path d="M55 35C50 30 45 25 40 30" stroke="#F57C00" stroke-width="2" stroke-linecap="round"/>
+  <path d="M65 35C70 30 75 25 80 30" stroke="#F57C00" stroke-width="2" stroke-linecap="round"/>
+</svg>

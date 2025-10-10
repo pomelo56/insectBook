@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "昆虫详情",
+  "usingComponents": {},
+  "backgroundColor": "#f8f8f8",
+  "navigationBarBackgroundColor": "#4CAF50",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true
+}

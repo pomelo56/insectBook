@@ -1,0 +1,139 @@
+<!-- 昆虫发现地图页面 -->
+<view class="discovery-map-container">
+
+  <!-- 筛选条件区域 -->
+  <view class="filter-section">
+    <view class="filter-header">
+      <text class="filter-title">筛选条件</text>
+      <image src="/images/icons/arrow-down.svg" class="filter-arrow {{showFilter ? 'rotate' : ''}}" bindtap="toggleFilter"></image>
+    </view>
+    
+    <!-- 筛选选项 -->
+    <view class="filter-options" wx:if="{{showFilter}}">
+      <!-- 时间筛选 -->
+      <view class="time-filters">
+        <view class="filter-btn {{timeFilter === 'today' ? 'active' : ''}}" bindtap="setTimeFilter" data-filter="today">
+          今天
+        </view>
+        <view class="filter-btn {{timeFilter === 'month' ? 'active' : ''}}" bindtap="setTimeFilter" data-filter="month">
+          本月
+        </view>
+        <view class="filter-btn {{timeFilter === 'all' ? 'active' : ''}}" bindtap="setTimeFilter" data-filter="all">
+          全部
+        </view>
+      </view>
+      
+      <!-- 位置筛选 -->
+      <view class="location-btn" bindtap="locateUser">
+        <image src="/images/icons/location.svg" class="location-icon"></image>
+        <text>我的位置</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 地图区域 -->
+  <view class="map-section">
+    <map 
+      id="myMap"
+      longitude="{{longitude}}"
+      latitude="{{latitude}}"
+      scale="14"
+      markers="{{markers}}"
+      show-location
+      bindmarkertap="showInsectDetail"
+      class="map"
+    ></map>
+    
+    <!-- 地图控制器已移除（用户反馈缩放按钮无效）-->
+  </view>
+
+  <!-- 统计信息区域 -->
+  <view class="stats-section">
+    <view class="stat-item">
+      <text class="stat-number">{{discoveryCount}}</text>
+      <text class="stat-label">发现地点</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-number">{{searchRadius}}km</text>
+      <text class="stat-label">探索半径</text>
+    </view>
+    <view class="stat-item">
+      <image src="/images/icons/flame.svg" class="stat-icon"></image>
+      <text class="stat-number">{{activityLevel}}</text>
+      <text class="stat-label">活跃度</text>
+    </view>
+  </view>
+
+  <!-- 发现昆虫浮动按钮 -->
+  <view class="camera-float-btn" bindtap="addDiscovery">
+    <image src="/images/icons/camera.svg" class="camera-icon"></image>
+  </view>
+
+  <!-- 昆虫详情弹窗 -->
+  <view class="detail-modal" wx:if="{{showDetail}}" bindtap="hideInsectDetail">
+    <view class="detail-content" catchtap="stopPropagation">
+      <view class="popup-header">
+        <image src="/images/icons/close.svg" class="close-icon" bindtap="hideInsectDetail"></image>
+      </view>
+      
+      <!-- 稀有标识 -->
+      <view class="rare-badge" wx:if="{{selectedInsect.rare}}">
+        <image src="/images/icons/star.svg" class="star-icon"></image>
+        <text>稀有发现</text>
+      </view>
+      
+      <!-- 昆虫图片 -->
+      <image src="{{selectedInsect.image}}" class="detail-image"></image>
+      
+      <!-- 昆虫信息 -->
+      <view class="detail-info">
+        <view class="insect-name-section">
+          <image wx:if="{{selectedInsect.rare}}" src="/images/icons/star.svg" class="rare-icon"></image>
+          <text class="insect-name">{{selectedInsect.name}}</text>
+        </view>
+        
+        <text class="discovery-date">{{selectedInsect.date}}</text>
+        
+        <view class="discovery-location">
+          <image src="/images/icons/location-small.svg" class="small-location-icon"></image>
+          <text>{{selectedInsect.location}}</text>
+        </view>
+        
+        <view class="weather-info">
+          <view class="weather-item">
+            <image src="/images/icons/sun.svg" class="weather-icon"></image>
+            <text>{{selectedInsect.weather}}</text>
+          </view>
+          <view class="weather-item">
+            <image src="/images/icons/season.svg" class="weather-icon"></image>
+            <text>{{selectedInsect.season}}</text>
+          </view>
+          <view class="weather-item">
+            <image src="/images/icons/clock.svg" class="weather-icon"></image>
+            <text>{{selectedInsect.time}}</text>
+          </view>
+        </view>
+        
+        <!-- 观察笔记 -->
+        <view class="notes-section">
+          <text class="notes-title">我的观察笔记</text>
+          <text class="notes-content">{{selectedInsect.notes}}</text>
+        </view>
+        
+        <!-- 操作按钮 -->
+        <view class="action-buttons">
+          <button class="share-btn" bindtap="shareDiscovery">
+            <image src="/images/icons/share.svg" class="share-icon"></image>
+            <text>分享发现</text>
+          </button>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 探索小贴士 -->
+  <view class="tip-section">
+    <image src="/images/icons/tip.svg" class="tip-icon"></image>
+    <text class="tip-text">{{explorationTip}}</text>
+  </view>
+</view>

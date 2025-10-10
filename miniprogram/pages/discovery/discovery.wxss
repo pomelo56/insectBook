@@ -1,0 +1,393 @@
+/* 昆虫发现地图样式 */
+.discovery-map-container {
+  padding: 0;
+  background-color: #f8f8f8;
+  min-height: 100vh;
+}
+
+/* 筛选条件区域 */
+.filter-section {
+  background-color: white;
+  padding: 20rpx 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filter-title {
+  font-size: 32rpx;
+  color: #333;
+}
+
+.filter-arrow {
+  width: 24rpx;
+  height: 24rpx;
+  transition: transform 0.3s;
+}
+
+.filter-arrow.rotate {
+  transform: rotate(180deg);
+}
+
+.filter-options {
+  margin-top: 20rpx;
+}
+
+.time-filters {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.filter-btn {
+  flex: 1;
+  background-color: #f0f0f0;
+  color: #666;
+  font-size: 28rpx;
+  border-radius: 60rpx;
+  padding: 12rpx 0;
+  text-align: center;
+}
+
+.filter-btn.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.location-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e8f5e9;
+  color: #4CAF50;
+  font-size: 28rpx;
+  border-radius: 60rpx;
+  padding: 12rpx 0;
+  width: 100%;
+}
+
+.location-icon {
+  width: 24rpx;
+  height: 24rpx;
+  margin-right: 10rpx;
+}
+
+/* 地图区域 */
+.map-section {
+  position: relative;
+  margin-bottom: 20rpx;
+  background-color: white;
+  padding: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.map {
+  width: 100%;
+  height: 600rpx;
+}
+
+.map-controls {
+  position: absolute;
+  bottom: 40rpx;
+  right: 40rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.control-btn {
+  width: 60rpx;
+  height: 60rpx;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.2);
+}
+
+.control-icon {
+  width: 30rpx;
+  height: 30rpx;
+}
+
+/* 统计信息区域 */
+.stats-section {
+  display: flex;
+  background-color: white;
+  padding: 20rpx 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #4CAF50;
+  margin-bottom: 8rpx;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.stat-icon {
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 8rpx;
+}
+
+/* 发现昆虫浮动按钮 */
+.camera-float-btn {
+  position: fixed;
+  bottom: 40rpx;
+  right: 40rpx;
+  width: 120rpx;
+  height: 120rpx;
+  background-color: #4CAF50;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.3);
+  z-index: 99;
+}
+
+.camera-icon {
+  width: 60rpx;
+  height: 60rpx;
+}
+
+/* 昆虫详情弹窗 */
+.detail-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  padding: 30rpx;
+}
+
+.detail-content {
+  width: 100%;
+  max-width: 600rpx;
+  background-color: white;
+  border-radius: 20rpx;
+  overflow: hidden;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: detailAppear 0.3s ease-in-out;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10rpx 20rpx;
+}
+
+/* 稀有标识 */
+.rare-badge {
+  position: absolute;
+  top: 20rpx;
+  left: 20rpx;
+  background-color: rgba(255, 193, 7, 0.9);
+  color: white;
+  padding: 8rpx 16rpx;
+  border-radius: 60rpx;
+  display: flex;
+  align-items: center;
+  font-size: 24rpx;
+}
+
+.star-icon {
+  width: 24rpx;
+  height: 24rpx;
+  margin-right: 8rpx;
+}
+
+/* 弹窗动画效果 */
+@keyframes detailAppear {
+  from {
+    opacity: 0;
+    transform: translateY(50rpx) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 探索小贴士区域 */
+.tip-section {
+  background-color: #fff9c4;
+  padding: 20rpx 30rpx;
+  margin-bottom: 20rpx;
+  border-left: 6rpx solid #ffeb3b;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+}
+
+.tip-icon {
+  width: 36rpx;
+  height: 36rpx;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+
+.tip-text {
+  font-size: 28rpx;
+  color: #795548;
+  line-height: 1.5;
+}
+
+.detail-image {
+  width: 100%;
+  height: 300rpx;
+  object-fit: cover;
+}
+
+.detail-info {
+  padding: 30rpx;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.insect-name-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20rpx;
+}
+
+.insect-name {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+}
+
+.rare-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 10rpx;
+}
+
+.close-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.discovery-date {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+  text-align: center;
+}
+
+.discovery-location {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 20rpx;
+}
+
+.small-location-icon {
+  width: 24rpx;
+  height: 24rpx;
+  margin-right: 10rpx;
+}
+
+.weather-info {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 30rpx;
+  padding: 20rpx;
+  background-color: #f8f9fa;
+  border-radius: 10rpx;
+}
+
+.weather-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.weather-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-bottom: 10rpx;
+}
+
+.notes-section {
+  margin-bottom: 30rpx;
+}
+
+.notes-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15rpx;
+  display: block;
+}
+
+.notes-content {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+.action-buttons {
+  margin-top: 20rpx;
+}
+
+.share-btn {
+  width: 100%;
+  background-color: #4CAF50;
+  color: white;
+  font-size: 32rpx;
+  border-radius: 60rpx;
+  padding: 18rpx 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+}
+
+.share-icon {
+  width: 32rpx;
+  height: 32rpx;
+  margin-right: 10rpx;
+}
+
+/* 适配不同屏幕尺寸 */
+@media screen and (max-width: 375px) {
+  .stat-number {
+    font-size: 36rpx;
+  }
+  
+  .detail-image {
+    height: 250rpx;
+  }
+}
