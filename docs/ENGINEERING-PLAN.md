@@ -1,20 +1,22 @@
 # insectBook 重构工程计划
 
-> 版本：v1.1 | 日期：2026-06-27 | 状态：待用户确认
+> 版本：v2.0 | 日期：2026-06-27 | 状态：Phase 0 L5 已完成，进入 L1
 > 方法论：Loop Engineering + AI First + Agentic Engineering
 > 团队：4 角色（PM 许清楚 / 架构师 高见远 / 工程师 寇豆码 / QA 严过关）
+> 回滚机制：Git baseline commit `6e532e8` + cleanup commit `6951627` — `git checkout 6e532e8` 可随时回退到 vibe coding 原状态
 
 ---
 
 ## 〇、总览
 
 ```
-Phase -1: 安全网（回滚基础） ← 开工前必须完成
-Phase 0: 准备（5 层）       ← 你现在站在这里
+Phase 0: 准备（5 层）       ← L5 已完成✓，现在进入 L1
 Phase 1: Loop 1 抽离         ← 最关键的重构循环
 Phase 2: Loop 2 规范化       ← 统一架构约定
 Phase 3: Loop 3 闭环         ← 测试覆盖 + 验收
 ```
+
+**回滚机制**：Git baseline commit 已完成（commit `6e532e8`），任何阶段出问题可直接 `git checkout 6e532e8` 回退。云数据库快照待用户在微信开发者工具中导出。
 
 每个 Phase 内部再拆为若干子任务，每子任务有明确的：
 - **负责角色** → 谁干
@@ -25,126 +27,12 @@ Phase 3: Loop 3 闭环         ← 测试覆盖 + 验收
 
 ---
 
-## Phase -1：安全网 — 回滚基础设施（开工前必须完成）
+## Git 安全网 — 已完成 ✓
 
-> **铁律：没有安全网就开工 = vibe coding。Phase -1 是整个工程的地基。**
-
-### 执行依赖链
-
-```
-P-1-1(Git baseline) → P-1-2(云数据库快照) → P-1-3(.gitignore 完善) → P-1-4(Git remote) → P-1-5(回滚 SOP 文档) → Phase 0 开工
-```
-
----
-
-### P-1-1：建立 Git 基线 — commit 当前所有改动
-
-| 项目 | 说明 |
-|------|------|
-| 负责角色 | 主理人(直接执行) |
-| 输入 | 当前 48 个 uncommitted changes + 所有 untracked 文件 |
-| 产出 | commit: `baseline: vibe-coding-snapshot` — 完整记录当前运行状态 |
-| 验证 | `git log` 有 2 条 commit（Initial + baseline）、`git status` 显示 clean |
-| 回滚到这个点 | `git checkout baseline-vibe-coding-snapshot` → 恢复到开工前状态 |
-
-**为什么必须做**：当前所有改动都悬空在 working directory 里（2775+/8147- 行），没有任何 Git 快照。如果现在改坏了，连"改坏了之前的代码"都找不到。必须先把当前状态锁住。
-
-**执行命令**：
-```bash
-git add -A
-git commit -m "baseline: vibe-coding-snapshot — 全部当前改动和文件，作为重构前的安全基线"
-```
-
----
-
-### P-1-2：云数据库快照 — 导出 insects + user_insects
-
-| 项目 | 说明 |
-|------|------|
-| 负责角色 | 主理人(直接执行) |
-| 输入 | 云数据库 insects / user_insects 集合 |
-| 产出 | `docs/snapshots/db-insects-2026-06-27.json` + `docs/snapshots/db-user-insects-2026-06-27.json` |
-| 验证 | JSON 文件存在、记录数与数据库一致 |
-| 回滚到这个点 | 用 `db-import` 云函数或手动导入 JSON 恢复数据库 |
-
-**为什么必须做**：Loop 2-1（ID 重构）会修改 insects 集合的数据结构。如果迁移失败，需要恢复原数据。云数据库没有自动备份功能，必须手动导出。
-
-**执行方式**：在微信开发者工具中，或通过云函数导出集合数据为 JSON。
-
----
-
-### P-1-3：完善 .gitignore — 排除 node_modules 和临时文件
-
-| 项目 | 说明 |
-|------|------|
-| 负责角色 | 主理人(直接执行) |
-| 输入 | 当前 .gitignore（14 行，缺关键项） |
-| 产出 | 完善的 .gitignore（排除 node_modules、.workbuddy/binaries、临时文件） |
-| 验证 | `git status` 不再显示 node_modules 下的文件 |
-
-**需要补充的 .gitignore 条目**：
-```gitignore
-# 已有项保留，补充以下：
-# WorkBuddy 运行时
-.workbuddy/binaries/
-.workbuddy/tasks/
-
-# 微信开发者工具
-miniprogram_npm/
-
-# 临时/修补文件（不再需要）
-deployment_logs/
-
-# 测试临时文件
-test_*.js
-*_fix.js
-```
-
----
-
-### P-1-4：建立 Git remote — 云端备份
-
-| 项目 | 说明 |
-|------|------|
-| 负责角色 | 主理人(直接执行) |
-| 输入 | GitHub 账号或 Gitee 账号 |
-| 产出 | `git remote add origin <url>` + `git push -u origin master` |
-| 验证 | `git remote -v` 显示 remote、`git push` 成功 |
-| 回滚到这个点 | `git clone <url>` → 完整恢复项目 |
-
-**为什么必须做**：当前项目只有本地 Git（无 remote），电脑丢了 = 全部丢失。推到 GitHub/Gitee 后，任何改动都有云端备份。
-
----
-
-### P-1-5：撰写回滚 SOP 文档
-
-| 项目 | 说明 |
-|------|------|
-| 负责角色 | 主理人(直接执行) |
-| 输入 | 回滚策略设计 |
-| 产出 | `docs/ROLLBACK-SOP.md` |
-| 验证 | 文档覆盖 3 种回滚场景、每种有明确命令和验证步骤 |
-
-**回滚 SOP 核心内容**：
-- 每个 Loop 开始前：创建分支 + 导出 DB 快照
-- 每个 Loop 失败后：git revert 分支 + 恢复 DB 快照
-- 全工程回退：checkout baseline commit + 恢复 baseline DB 快照
-- 最坏情况：clone from remote + 恢复 baseline
-
-详见 `docs/ROLLBACK-SOP.md`。
-
----
-
-### Phase -1 验收标准
-
-| 指标 | 目标值 |
-|------|--------|
-| Git commit 数 | ≥ 2（Initial + baseline） |
-| Git working directory | clean（无未提交改动） |
-| Git remote | 有（GitHub/Gitee） |
-| 云数据库快照 | insects + user_insects JSON 文件 |
-| .gitignore 完善 | node_modules 不出现在 git status |
-| ROLLBACK-SOP.md | 存在、覆盖 3 种回滚场景 |
+- **Baseline commit `6e532e8`**: 锁住 vibe coding 全貌，随时可回退 — `git checkout 6e532e8`
+- **Cleanup commit `6951627`**: 删除 9 补丁 MD + 6 补丁 SH + 2 冗余 docs，完善 .gitignore
+- **回滚**: 任何阶段出问题 → `git checkout 6e532e8` 回退到开工前完整状态
+- **云数据库快照**: 待用户在微信开发者工具中手动导出（Loop 2 ID 重构前需完成）
 
 ---
 
@@ -160,7 +48,7 @@ L5(清理遗留) → L1(AI基础设施) → L2(设计文档) → L3(编码约定
 
 ---
 
-### L5：清理 vibe coding 遗留
+### L5：清理 vibe coding 遗留 — 已完成 ✓
 
 | # | 任务 | 负责角色 | 产出 | 验证 |
 |---|------|---------|------|------|
