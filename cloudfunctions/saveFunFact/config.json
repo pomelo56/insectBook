@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "openapi": [],
+    "db": [
+      {
+        "resource": "cloud://cloud1-8ggzed032ed5e7ec.636c-cloud1-8ggzed032ed5e7ec/fun_facts",
+        "permission": "readAndWrite"
+      },
+      {
+        "resource": "cloud://cloud1-8ggzed032ed5e7ec.636c-cloud1-8ggzed032ed5e7ec/admin_operations",
+        "permission": "readAndWrite"
+      }
+    ],
+    "wxcloud": {
+      "resourceAppid": "wx884dcad25bf73414",
+      "resourceEnv": "cloud1-8ggzed032ed5e7ec"
+    }
+  },
+  "timeout": 5,
+  "memorySize": 128
+}

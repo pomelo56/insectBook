@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "openapi": [],
+    "db": [
+      {
+        "resource": "cloud://insect-book-4gy9n81u2292e256.696e-insect-book-4gy9n81u2292e256-1312874216/insects",
+        "permission": "readAndWrite"
+      },
+      {
+        "resource": "cloud://insect-book-4gy9n81u2292e256.696e-insect-book-4gy9n81u2292e256-1312874216/admin_operations",
+        "permission": "readAndWrite"
+      }
+    ],
+    "wxcloud": {
+      "resourceAppid": "insect-book",
+      "resourceEnv": "insect-book-4gy9n81u2292e256"
+    }
+  },
+  "timeout": 5,
+  "memorySize": 128
+}","}}}

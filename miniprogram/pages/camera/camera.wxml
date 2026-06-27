@@ -19,6 +19,11 @@
           <text class="placeholder-text">点击取景框开启相机</text>
           <text class="placeholder-subtext">保护隐私，相机默认关闭</text>
         </view>
+
+  <!-- 隐藏的canvas，用于图片压缩 -->
+  <canvas canvas-id="compressCanvas" style="width: 1200px; height: 1200px; position: absolute; left: -9999px; top: -9999px;"></canvas>
+  <!-- 隐藏的canvas，用于截取缩放区域 -->
+  <canvas canvas-id="crop-canvas" style="width: 750px; height: 750px; position: absolute; left: -9999px; top: -9999px;"></canvas>
       </view>
     </view>
     
@@ -39,6 +44,7 @@
     <!-- 图片预览（支持自由缩放和移动） -->
       <view class="image-preview-container">
         <image 
+          id="insect-image"
           class="preview-image"
           src="{{tempImagePath}}"
           mode="widthFix"
@@ -51,14 +57,17 @@
           style="transform: scale({{scale}}) translate({{imagePosition.x}}px, {{imagePosition.y}}px); transform-origin: center center;"
         />
         
-        <view class="zoom-hint">
-          双指捏合/张开可缩放图片，单指拖动可移动图片。将昆虫调整至中央位置后，点击'再次识别'按钮重新识别
+        <!-- 只在未缩放时显示提示 -->
+        <view class="zoom-hint" wx:if="{{scale === 1}}">
+          双指缩放可查看昆虫细节，再次识别时使用原图
         </view>
       </view>
     
     <!-- 识别结果 -->
     <view class="recognition-results">
-      <view class="result-title">识别结果</view>
+      <view class="result-title">
+        识别结果
+      </view>
       
       <block wx:if="{{recognitionResults.length > 0}}">
         <view 
@@ -93,6 +102,8 @@
       <text>{{saveError}}</text>
     </view>
     
+
+    
     <!-- 操作按钮 -->
     <view class="action-buttons" wx:if="{{recognitionResults.length > 0}}">
       <button class="primary-btn" bindtap="confirmSelection" loading="{{isSaving}}">确认发现</button>
@@ -101,6 +112,8 @@
       <button class="secondary-btn" bindtap="reset">重新拍摄</button>
     </view>
 
+
+    
     <!-- 重新识别按钮 -->
     <view class="action-buttons" wx:if="{{recognitionResults.length === 0 || isNotAnimal}}">
       <button class="primary-btn" bindtap="showManualInputDialog">手动输入</button>

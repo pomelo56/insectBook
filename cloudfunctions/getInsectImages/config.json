@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "openapi": [],
+    "cloudbase": {
+      "env": "insectbook-9g6d16l50a6c5b4b",
+      "database": {
+        "collection": ["insects", "user_insects"],
+        "permissions": ["get", "list"]
+      },
+      "storage": {
+        "path": ["images/insects"],
+        "permissions": ["get"]
+      }
+    }
+  },
+  "runtime": "Node.js 14",
+  "memorySize": 256,
+  "timeout": 60,
+  "envId": "insectbook-9g6d16l50a6c5b4b"
+}

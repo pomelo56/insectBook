@@ -1,6 +1,45 @@
 {
   "miniprogramRoot": "miniprogram/",
   "cloudfunctionRoot": "cloudfunctions/",
+  "cloudfunctions": {
+    "getInsectDetail": {
+      "uploadCloudTime": 1761818400
+    },
+    "markFound": {
+      "uploadCloudTime": 1761818400
+    },
+    "getInsectList": {
+      "uploadCloudTime": 1761818400
+    },
+    "getInsectImages": {
+      "uploadCloudTime": 1761818400
+    },
+    "getFunFactsList": {
+      "uploadCloudTime": 1761818400
+    },
+    "saveFunFact": {
+      "uploadCloudTime": 1761818400
+    },
+    "deleteFunFact": {
+      "uploadCloudTime": 1761818400
+    },
+    "getBadgeList": {
+      "uploadCloudTime": 1761818400
+    },
+    "saveBadge": {
+      "uploadCloudTime": 1761818400
+    },
+    "deleteBadge": {
+      "uploadCloudTime": 1761818400
+    },
+    "calliNat": {
+      "envVariables": {
+        "ARK_API_KEY": "your-ark-api-key-here",
+        "ARK_BASE_URL": "https://ark.cn-beijing.volces.com/api/v3",
+        "MODEL_ID": "doubao-seed-1-6-vision-250815"
+      }
+    }
+  },
   "setting": {
     "urlCheck": true,
     "es6": true,
@@ -43,6 +82,12 @@
     "condition": false,
     "swc": false,
     "disableSWC": true
+  },
+  "networkTimeout": {
+    "request": 10000,
+    "connectSocket": 10000,
+    "uploadFile": 30000,
+    "downloadFile": 30000
   },
   "appid": "wx884dcad25bf73414",
   "projectname": "quickstart-wx-cloud",

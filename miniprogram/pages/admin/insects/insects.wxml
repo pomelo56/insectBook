@@ -1,0 +1,114 @@
+<!-- miniprogram/pages/admin/insects/insects.wxml -->
+<view class="insects-container">
+  <view class="header">
+    <view class="search-bar">
+      <input 
+        type="text" 
+        placeholder="搜索昆虫（名称/分类）" 
+        value="{{searchKey}}"
+        bindinput="onSearch"
+        class="search-input"
+      />
+      <image src="/images/icons/search.png" class="search-icon"></image>
+    </view>
+    
+    <button class="sync-btn" type="primary" size="mini" bindtap="syncInsectData" disabled="{{syncing}}">
+      {{syncing ? '同步中...' : '同步数据'}}
+    </button>
+
+  <!-- 隐藏的canvas，用于管理员图片压缩 -->
+  <canvas canvas-id="adminCompressCanvas" style="width: 800px; height: 800px; position: absolute; left: -9999px; top: -9999px;"></canvas>
+  </view>
+
+  <view class="filter-bar">
+    <picker bindchange="onFilterChange" value="{{currentFilter}}" range-key="name" range="{{filterOptions}}" class="filter-picker">
+      <view class="picker-item">
+        {{currentFilter === 'all' ? '全部昆虫' : currentFilter === 'noImage' ? '未配置图片' : '已配置图片'}}
+        <image src="/images/icons/arrow-down.png" class="arrow-icon"></image>
+      </view>
+    </picker>
+    
+    <picker bindchange="onSortChange" value="{{currentSort}}" range-key="name" range="{{sortOptions}}" class="sort-picker">
+      <view class="picker-item">
+        {{currentSort === 'createTime' ? '添加时间' : currentSort === 'recognizeCount' ? '识别次数' : '名称'}}
+        <image 
+          src="{{sortOrder === 'desc' ? '/images/icons/sort-desc.png' : '/images/icons/sort-asc.png'}}" 
+          class="sort-icon"
+        ></image>
+      </view>
+    </picker>
+  </view>
+
+  <view class="insects-list">
+    <view wx:if="{{loading && insects.length === 0}}" class="loading">
+      <image src="/images/icons/loading.gif" class="loading-icon"></image>
+      <text>加载中...</text>
+    </view>
+    
+    <view wx:elif="{{insects.length === 0}}" class="empty">
+      <image src="/images/icons/empty.png" class="empty-icon"></image>
+      <text>暂无昆虫数据</text>
+    </view>
+    
+    <!-- 简化昆虫列表项结构，确保点击事件正确触发 -->
+    <view wx:for="{{insects}}" wx:key="id" class="insect-item">
+      <!-- 整个项目作为可点击区域 -->
+      <view bindtap="editInsect" data-insect="{{item}}" class="insect-content">
+        <!-- 图片部分 -->
+        <view class="image-container">
+          <image 
+            src="{{item.imageUrl || '/images/empty_insect.png'}}" 
+            class="insect-image"
+            mode="aspectFill"
+            lazy-load="true"
+          ></image>
+          <view wx:if="{{!item.imageUrl}}" class="no-image-tag">未配置图片</view>
+        </view>
+        
+        <!-- 信息部分 -->
+        <view class="insect-info">
+          <view class="insect-name">{{item.name || '未知昆虫'}}</view>
+          <view class="insect-meta">
+            <text class="meta-item">分类: {{item.category || '未知'}}</text>
+            <text class="meta-item">识别次数: {{item.recognizeCount || 0}}</text>
+          </view>
+          <view class="insect-time">添加时间: {{item.createTime}}</view>
+          <view class="insect-id">ID: {{item.id}}</view>
+        </view>
+        
+        <!-- 箭头图标 -->
+        <view class="arrow">
+          <image src="/images/icons/arrow-right.png" class="right-arrow"></image>
+        </view>
+      </view>
+      
+      <!-- 操作按钮区域，使用catchtap防止事件冒泡 -->
+      <view class="action-buttons">
+        <button 
+          type="primary" 
+          size="mini" 
+          catchtap="configImage"
+          data-id="{{item.id}}"
+          data-external-id="{{item.externalId}}"
+          class="config-button"
+        >
+          {{item.imageUrl ? '更换图片' : '配置图片'}}
+        </button>
+        <button 
+          type="default" 
+          size="mini" 
+          catchtap="previewImage"
+          data-url="{{item.imageUrl}}"
+          class="preview-button"
+          disabled="{{!item.imageUrl}}"
+        >
+          预览图片
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading && insects.length > 0}}" class="load-more">
+    <text>加载更多...</text>
+  </view>
+</view>

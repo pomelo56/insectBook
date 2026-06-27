@@ -1,0 +1,116 @@
+<!-- miniprogram/pages/admin/insects/detail-insect.wxml -->
+<view class="detail-container">
+  <!-- 已移除头部（返回、标题、强制刷新按钮） -->
+
+  <view wx:if="{{loading}}" class="loading-container">
+    <image src="/images/icons/loading.gif" class="loading-icon"></image>
+    <text>加载中...</text>
+  </view>
+
+  <view wx:elif="{{!insect}}" class="empty-container">
+    <text>昆虫信息不存在</text>
+    <button type="primary" bindtap="goBack">返回</button>
+  </view>
+
+  <view wx:else class="insect-detail">
+    <!-- 基本信息卡片 -->
+    <view class="info-card">
+      <view class="info-header">
+        <text class="info-title">基本信息</text>
+      </view>
+      
+      <view class="insect-header">
+        <view class="image-container">
+          <image 
+            src="{{insect.imageUrl || '/images/empty_insect.png'}}" 
+            class="insect-image" 
+            mode="aspectFill"
+          ></image>
+        </view>
+        
+        <view class="basic-info">
+          <view class="info-row">
+            <text class="label">昆虫名称：</text>
+            <text class="value">{{insect.name || '未知昆虫'}}</text>
+          </view>
+          
+          <view class="info-row">
+            <text class="label">识别次数：</text>
+            <text class="value">{{insect.recognizeCount || 0}}</text>
+          </view>
+          
+          <view class="info-row">
+            <text class="label">添加时间：</text>
+            <text class="value">{{insect.createTime || '未知'}}</text>
+          </view>
+          
+          <view class="info-row">
+            <text class="label">昆虫ID：</text>
+            <text class="value">{{insect.id}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 百科信息编辑区域 -->
+    <view class="encyclopedia-card">
+      <view class="info-header">
+        <text class="info-title">百科信息</text>
+        <button 
+          size="mini" 
+          type="primary" 
+          bindtap="fetchFromBaiduEncyclopedia"
+          disabled="{{encyclopediaLoading}}"
+        >
+          {{encyclopediaLoading ? '获取中...' : '从百度百科获取'}}
+        </button>
+      </view>
+      
+      <view class="encyclopedia-content">
+        <textarea 
+          value="{{encyclopediaContent}}" 
+          bindinput="onEncyclopediaInput" 
+          placeholder="请输入百科信息，或点击上方按钮从百度百科获取"
+          class="content-textarea"
+          style="height: 200px; max-height: 300px; overflow-y: auto;"
+          maxlength="5000"
+        ></textarea>
+        <text class="char-count">{{encyclopediaContent.length}}/5000</text>
+      </view>
+      
+      <view class="action-buttons">
+        <button 
+          type="primary" 
+          bindtap="saveEncyclopedia"
+          disabled="{{saving}}"
+        >
+          {{saving ? '保存中...' : '保存百科信息'}}
+        </button>
+      </view>
+    </view>
+
+    <!-- 其他昆虫信息 -->
+    <view class="info-card">
+      <view class="info-header">
+        <text class="info-title">其他信息</text>
+      </view>
+      
+      <view class="info-section">
+        <view class="info-row">
+          <text class="label">分类：</text>
+          <text class="value">{{insect.category || '未分类'}}</text>
+        </view>
+        
+        <view class="info-row">
+          <text class="label">科学名称：</text>
+          <text class="value">{{insect.scientificName || '未知'}}</text>
+        </view>
+        
+        <view class="info-row">
+          <text class="label">描述：</text>
+          <text class="value">{{insect.description || '无描述'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

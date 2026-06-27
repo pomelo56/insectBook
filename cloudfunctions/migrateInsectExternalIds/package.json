@@ -1,0 +1,14 @@
+{
+  "name": "migrateInsectExternalIds",
+  "version": "1.0.0",
+  "description": "昆虫数据迁移云函数 - 为现有昆虫添加externalId",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

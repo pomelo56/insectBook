@@ -2,10 +2,27 @@
   "pages": [
     "pages/index/index",
     "pages/camera/camera",
-    "pages/insect-detail/insect-detail",
-    "pages/badges/badges",
-    "pages/discovery/discovery",
-    "pages/edit-discovery/edit-discovery"
+    "pages/get-openid/get-openid",
+    "pages/admin-tools/admin-tools",
+    "pages/admin/index",
+    "pages/admin/fun-facts/fun-facts",
+    "pages/admin/users/users",
+    "pages/admin/insects/insects",
+    "pages/admin/insects/detail-insect",
+    "pages/admin/badges/badges",
+    "pages/admin/dashboard/dashboard"
+  ],
+  "subpackages": [
+    {
+      "root": "subpages/",
+      "pages": [
+      "insect-detail/insect-detail",
+      "badges/badges",
+      "discovery/discovery",
+      "edit-discovery/edit-discovery"
+    ],
+      "independent": true
+    }
   ],
   "window": {
     "backgroundColor": "#F6F6F6",
@@ -43,5 +60,7 @@
   "useExtendedLib": {
     "weui": true
   },
-  "componentFramework": "glass-easel"
+  "componentFramework": "glass-easel",
+  "usingComponents": {},
+  "lazyCodeLoading": "requiredComponents"
 }

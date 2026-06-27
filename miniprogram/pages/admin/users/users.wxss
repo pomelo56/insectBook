@@ -1,0 +1,167 @@
+/* miniprogram/pages/admin/users/users.wxss */
+.users-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 20rpx;
+}
+
+.header {
+  margin-bottom: 20rpx;
+}
+
+.search-bar {
+  position: relative;
+  background-color: #fff;
+  border-radius: 10rpx;
+  padding: 0 30rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.search-input {
+  flex: 1;
+  height: 88rpx;
+  font-size: 32rpx;
+  color: #333;
+}
+
+.search-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.filter-bar {
+  display: flex;
+  justify-content: space-between;
+  background-color: #fff;
+  border-radius: 10rpx;
+  padding: 0 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.filter-picker, .sort-picker {
+  flex: 1;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+}
+
+.filter-picker {
+  border-right: 1rpx solid #f0f0f0;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  font-size: 32rpx;
+  color: #666;
+}
+
+.arrow-icon, .sort-icon {
+  width: 30rpx;
+  height: 30rpx;
+  margin-left: 10rpx;
+}
+
+.users-list {
+  background-color: #fff;
+  border-radius: 10rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.user-item {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.user-item:active {
+  background-color: #f9f9f9;
+}
+
+.user-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  margin-right: 20rpx;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-name {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.user-meta {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 10rpx;
+}
+
+.meta-item {
+  font-size: 28rpx;
+  color: #999;
+  margin-right: 30rpx;
+  margin-bottom: 6rpx;
+}
+
+.register-time {
+  font-size: 26rpx;
+  color: #bbb;
+}
+
+.right-arrow {
+  width: 30rpx;
+  height: 30rpx;
+  margin-left: 20rpx;
+}
+
+.loading, .empty {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999;
+}
+
+.loading-icon, .empty-icon {
+  width: 100rpx;
+  height: 100rpx;
+  margin-bottom: 20rpx;
+}
+
+.load-more {
+  text-align: center;
+  padding: 20rpx 0;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 适配不同尺寸屏幕 */
+@media (min-width: 768px) {
+  .users-container {
+    padding: 40rpx;
+  }
+  
+  .user-item {
+    padding: 40rpx;
+  }
+}

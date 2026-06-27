@@ -13,6 +13,11 @@
           "collection": "user_insects",
           "read": true,
           "write": true
+        },
+        {
+          "collection": "user_stats",
+          "read": true,
+          "write": true
         }
       ]
     }

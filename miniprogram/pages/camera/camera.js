@@ -35,56 +35,235 @@ Page({
     startY: 0,
     previewWidth: 0,
     previewHeight: 0,
-    cameraEnabled: false
+    cameraEnabled: false,
+    photoTimestamp: null // 存储图片拍摄时间
   },
 
-  // 启用相机
   enableCamera: function() {
     this.setData({ cameraEnabled: true });
   },
 
-  // 拍照
+  checkNetworkStatus: function() {
+    wx.getNetworkType({
+      success: res => {
+        const networkType = res.networkType;
+        if (networkType === 'none') {
+          wx.showToast({
+            title: '当前无网络连接',
+            icon: 'none',
+            duration: 3000
+          });
+          return false;
+        } else if (networkType === '2g') {
+          wx.showModal({
+            title: '网络状态',
+            content: '当前网络速度较慢，识别可能需要更长时间',
+            showCancel: false
+          });
+        }
+        return true;
+      },
+      fail: () => {
+        return true;
+      }
+    });
+    return true;
+  },
+
   takePhoto: function() {
+    this.checkNetworkStatus();
+    
     if (!this.data.cameraEnabled) {
       this.enableCamera();
       return;
     }
+    
+    wx.showLoading({
+      title: '拍照中...',
+      mask: true
+    });
+    
     const ctx = wx.createCameraContext();
     ctx.takePhoto({
       quality: 'high',
       success: (res) => {
+        wx.hideLoading();
+        wx.showLoading({
+          title: '正在处理图片...',
+          mask: true
+        });
+        
+        // 记录拍照时的实际时间
+        const photoTimestamp = Date.now();
+        console.log('【调试】记录拍照时间:', photoTimestamp);
+        
+        // 设置状态
         this.setData({
+          photoTimestamp: photoTimestamp,
           tempImagePath: res.tempImagePath,
           hasResult: true,
           scale: 1
         });
         this.recognizeInsect(res.tempImagePath);
+      },
+      fail: (err) => {
+        wx.hideLoading();
+        console.error('拍照失败：', err);
+        
+        let errorMsg = '拍照失败，请重试';
+        if (err.errMsg && err.errMsg.includes('auth deny')) {
+          errorMsg = '请授权相机权限后重试';
+        }
+        
+        wx.showToast({
+          title: errorMsg,
+          icon: 'none',
+          duration: 2000
+        });
       }
     });
   },
 
-  // 从相册选择图片
   chooseImage: function() {
-    // 从相册选择不需要启用相机
+    this.checkNetworkStatus();
+    
     wx.chooseImage({
       count: 1,
       sizeType: ['compressed'],
       sourceType: ['album'],
       success: (res) => {
-        this.setData({
-          tempImagePath: res.tempFilePaths[0],
-          hasResult: true,
-          scale: 1
+        wx.showLoading({
+          title: '正在处理图片...',
+          mask: true
         });
-        this.recognizeInsect(res.tempFilePaths[0]);
+        
+        wx.getImageInfo({
+          src: res.tempFilePaths[0],
+          success: (imageInfo) => {
+            console.log('图片信息：', imageInfo);
+            
+            if (imageInfo.width > 3000 || imageInfo.height > 3000) {
+              console.log('图片尺寸较大，可能影响识别速度');
+            }
+            
+            // 尝试获取图片的拍摄时间
+            let photoTimestamp = null;
+            console.log('【调试】开始提取图片时间信息');
+            
+            // 方法1：从图片信息中获取修改时间
+            console.log('【调试】图片信息完整内容:', JSON.stringify(imageInfo));
+            if (imageInfo.modifyTime) {
+              photoTimestamp = new Date(imageInfo.modifyTime).getTime();
+              console.log('【调试】从图片信息获取到修改时间:', imageInfo.modifyTime, '转换为时间戳:', photoTimestamp);
+            } else {
+              console.log('【调试】图片信息中没有modifyTime');
+            }
+            
+            // 方法2：从文件路径中尝试解析时间（如果文件名包含时间信息）
+            if (!photoTimestamp) {
+              const filePath = res.tempFilePaths[0];
+              console.log('【调试】文件路径:', filePath);
+              
+              // 尝试匹配多种常见的时间格式
+              const timeFormats = [
+                { pattern: /\d{8}_\d{6}/, format: 'YYYYMMDD_HHmmss' }, // 20240101_120000
+                { pattern: /IMG_\d{8}_\d{6}/, format: 'IMG_YYYYMMDD_HHmmss' }, // IMG_20240101_120000
+                { pattern: /\d{14}/, format: 'YYYYMMDDHHmmss' }, // 20240101120000
+                { pattern: /\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}/, format: 'YYYY-MM-DD_HH-mm-ss' } // 2024-01-01_12-00-00
+              ];
+              
+              for (const format of timeFormats) {
+                const timeMatches = filePath.match(format.pattern);
+                if (timeMatches && timeMatches[0]) {
+                  const timeStr = format.format.includes('IMG_') ? timeMatches[0].substring(4) : timeMatches[0];
+                  console.log('【调试】匹配到时间格式:', format.format, '原始时间字符串:', timeStr);
+                  
+                  let parsedDate;
+                  try {
+                    if (format.format.includes('YYYYMMDD_HHmmss') || format.format === 'YYYYMMDDHHmmss') {
+                      const year = timeStr.substring(0, 4);
+                      const month = timeStr.substring(4, 6);
+                      const day = timeStr.substring(6, 8);
+                      const hour = timeStr.substring(format.format.includes('_') ? 9 : 8, format.format.includes('_') ? 11 : 10);
+                      const minute = timeStr.substring(format.format.includes('_') ? 11 : 10, format.format.includes('_') ? 13 : 12);
+                      const second = timeStr.substring(format.format.includes('_') ? 13 : 12, format.format.includes('_') ? 15 : 14);
+                      
+                      parsedDate = new Date(year, month - 1, day, hour, minute, second);
+                    } else if (format.format.includes('-')) {
+                      // 处理带连字符的格式
+                      const dateParts = timeStr.split('_')[0].split('-');
+                      const timeParts = timeStr.split('_')[1].split('-');
+                      parsedDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 
+                                          timeParts[0], timeParts[1], timeParts[2]);
+                    }
+                    
+                    if (parsedDate && !isNaN(parsedDate.getTime())) {
+                      photoTimestamp = parsedDate.getTime();
+                      console.log('【调试】从文件名解析出拍摄时间:', parsedDate.toISOString(), '时间戳:', photoTimestamp);
+                      break;
+                    }
+                  } catch (e) {
+                    console.log('【调试】时间解析错误:', e);
+                  }
+                }
+              }
+            }
+            
+            // 方法3：如果以上方法都失败，使用文件的修改时间
+            if (!photoTimestamp) {
+              // 在微信小程序中，我们可以尝试使用文件系统API获取更多信息
+              // 但由于权限限制，可能无法获取
+              console.log('【调试】无法从图片元数据或文件名中提取时间');
+              
+              // 作为备选方案，使用当前时间，但添加日志标识这是备选方案
+              photoTimestamp = Date.now();
+              console.log('【调试】使用当前时间作为备选方案:', photoTimestamp);
+            }
+            
+            // 设置状态
+            this.setData({
+              photoTimestamp: photoTimestamp,
+              tempImagePath: res.tempFilePaths[0],
+              hasResult: true,
+              scale: 1
+            });
+            
+            console.log('【调试】状态更新完成，准备进行识别');
+            // 立即进行图片识别
+            this.recognizeInsect(res.tempFilePaths[0]);
+          },
+          fail: err => {
+            wx.hideLoading();
+            console.error('获取图片信息失败：', err);
+            wx.showToast({
+              title: '图片格式不支持，请选择JPG或PNG格式',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+        });
+      },
+      fail: (err) => {
+        console.error('选择图片失败：', err);
+        
+        let errorMsg = '选择图片失败，请重试';
+        if (err.errMsg && err.errMsg.includes('auth deny')) {
+          errorMsg = '请授权相册权限后重试';
+        }
+        
+        wx.showToast({
+          title: errorMsg,
+          icon: 'none',
+          duration: 2000
+        });
       }
     });
   },
 
-  // 识别昆虫
   recognizeInsect: function(filePath) {
     this.setData({
-      isRecognizing: true
+      isRecognizing: true,
+      recognitionTimeout: false
     });
     
     wx.showLoading({
@@ -92,70 +271,226 @@ Page({
       mask: true
     });
     
-    const fs = wx.getFileSystemManager();
-    fs.readFile({
-      filePath: filePath,
-      encoding: 'base64',
-      success: (res) => {
-        const imageBase64 = res.data;
+    // 先压缩图片，再转 base64
+    console.log('开始压缩图片...');
+    this.compressImage(filePath)
+      .then(compressedPath => {
+        console.log('压缩完成，开始转 base64:', compressedPath);
         
-        wx.cloud.callFunction({
-          name: 'calliNat',
-          data: {
-            imageBase64: imageBase64
-          },
+        const fs = wx.getFileSystemManager();
+        fs.readFile({
+          filePath: compressedPath,
+          encoding: 'base64',
           success: (res) => {
-            wx.hideLoading();
-            this.setData({ isRecognizing: false });
+            const imageBase64 = res.data;
+            const sizeKB = Math.round(imageBase64.length * 0.75 / 1024);
+            console.log(`Base64 大小: ${sizeKB}KB`);
             
-            if (res.result && res.result.success) {
-              const results = res.result.data;
-              const isNotAnimal = results.length === 0;
-              
-              this.setData({
-                recognitionResults: results,
-                selectedIndex: 0,
-                isNotAnimal: isNotAnimal
-              });
-              
-              if (isNotAnimal) {
-                wx.showToast({
-                  title: '未识别到昆虫',
-                  icon: 'none'
-                });
-              }
-            } else {
+            if (imageBase64.length > 2000000) {
+              wx.hideLoading();
+              this.setData({ isRecognizing: false });
               wx.showToast({
-                title: res.result.message || '识别失败',
-                icon: 'none'
+                title: '图片过大，请选择较小的图片',
+                icon: 'none',
+                duration: 2000
               });
+              return;
             }
+            
+            const timeoutTimer = setTimeout(() => {
+              wx.hideLoading();
+              this.setData({ isRecognizing: false, recognitionTimeout: true });
+              wx.showToast({
+                title: '网络连接较慢，请检查网络',
+                icon: 'none',
+                duration: 3000
+              });
+            }, 15000);
+            
+            wx.cloud.callFunction({
+              name: 'calliNat',
+              data: {
+                imageBase64: imageBase64
+              },
+              success: (res) => {
+                clearTimeout(timeoutTimer);
+                if (this.data.recognitionTimeout) return;
+                
+                wx.hideLoading();
+                this.setData({ isRecognizing: false });
+                
+                console.log('识别结果:', res);
+                console.log('识别结果详细:', JSON.stringify(res.result));
+                
+                // 检查返回结果
+                if (res.result) {
+                  const result = res.result;
+                  
+                  // 检查是否有错误信息
+                  if (result.error && result.error.type === 'ETIMEDOUT') {
+                    wx.showModal({
+                      title: '识别超时',
+                      content: result.error.suggestion || '网络或服务繁忙，请稍后重试或手动输入昆虫名称',
+                      confirmText: '手动输入',
+                      cancelText: '稍后重试',
+                      success: (resModal) => {
+                        if (resModal.confirm) {
+                          this.showManualInputDialog();
+                        } else {
+                          // 用户选择稍后重试，可以提供一些优化建议
+                          wx.showToast({
+                            title: '建议：检查网络或稍后再试',
+                            icon: 'none',
+                            duration: 3000
+                          });
+                        }
+                      }
+                    });
+                    return;
+                  }
+                  
+                  const isRecognized = result.isRecognized === true;
+                  const insectName = result.insectName || '未识别出昆虫';
+                  
+                  console.log('isRecognized:', isRecognized, 'insectName:', insectName);
+                  
+                  // 只要有有效的昆虫名称就认为识别成功
+                  const hasValidName = insectName && insectName !== '未识别出昆虫' && insectName.length >= 2;
+                  
+                  if (hasValidName) {
+                    // 识别成功
+                    const confidence = result.confidence || 'medium';
+                    const category = result.category || '';
+                    const scorePercent = result.scorePercent || '90';
+                    console.log('昆虫识别成功', insectName, '置信度:', confidence, '类别:', category);
+                    
+                    const results = [{ 
+                      name: insectName, 
+                      confidence: confidence, 
+                      category: category,
+                      scorePercent: scorePercent
+                    }];
+                    
+                    this.setData({
+                      recognitionResults: results,
+                      selectedIndex: 0,
+                      isNotAnimal: false,
+                      hasResult: true,
+                      confidence: confidence,
+                      category: category
+                    });
+                    
+                    // 显示识别成功提示
+                    let toastTitle = '识别成功';
+                    if (confidence === 'medium') {
+                      toastTitle = '已识别昆虫类别';
+                    }
+                    
+                    wx.showToast({
+                      title: toastTitle,
+                      icon: 'success',
+                      duration: 1500
+                    });
+                  } else {
+                    // 未识别出昆虫
+                    this.setData({
+                      recognitionResults: [],
+                      isNotAnimal: true,
+                      hasResult: true
+                    });
+                    
+                    wx.showToast({
+                      title: '未识别到昆虫',
+                      icon: 'none'
+                    });
+                    
+                    setTimeout(() => {
+                      wx.showModal({
+                        title: '识别失败',
+                        content: '无法自动识别，是否手动输入昆虫信息？',
+                        success: resModal => {
+                          if (resModal.confirm) {
+                            this.showManualInputDialog();
+                          }
+                        }
+                      });
+                    }, 1500);
+                  }
+                } else {
+                  // 云函数返回了结果，但处理时出现问题
+                  console.error('识别结果处理异常:', res.result);
+                  wx.showToast({
+                    title: '识别结果处理异常',
+                    icon: 'none',
+                    duration: 3000
+                  });
+                }
+              },
+              fail: (err) => {
+                clearTimeout(timeoutTimer);
+                if (this.data.recognitionTimeout) return;
+                
+                wx.hideLoading();
+                this.setData({ isRecognizing: false });
+                
+                console.error('调用识别服务失败:', err);
+                
+                // 检查是否是超时错误
+                const isTimeout = err.errMsg && err.errMsg.includes('timeout');
+                
+                if (isTimeout) {
+                  wx.showModal({
+                    title: '识别超时',
+                    content: '网络或服务繁忙，请稍后重试或手动输入昆虫名称。\n\n优化建议：\n1. 检查网络连接\n2. 稍后再试\n3. 手动输入昆虫名称\n\n如持续超时，建议手动输入昆虫名称',
+                    confirmText: '手动输入',
+                    cancelText: '稍后重试',
+                    success: (res) => {
+                      if (res.confirm) {
+                        this.showManualInputDialog();
+                      } else {
+                        wx.showToast({
+                          title: '建议稍后再试',
+                          icon: 'none',
+                          duration: 2000
+                        });
+                      }
+                    }
+                  });
+                } else {
+                  wx.showToast({
+                    title: '识别服务暂时不可用',
+                    icon: 'none',
+                    duration: 3000
+                  });
+                }
+              }
+            });
           },
           fail: (err) => {
             wx.hideLoading();
             this.setData({ isRecognizing: false });
             
-            console.error('调用识别服务失败:', err);
+            console.error('读取图片失败:', err);
             wx.showToast({
-              title: '识别服务超时，请重试',
-              icon: 'none'
+              title: '图片处理失败',
+              icon: 'none',
+              duration: 2000
             });
           }
         });
-      },
-      fail: (err) => {
+      })
+      .catch(err => {
         wx.hideLoading();
         this.setData({ isRecognizing: false });
-        
+        console.error('压缩图片失败:', err);
         wx.showToast({
           title: '图片处理失败',
-          icon: 'none'
+          icon: 'none',
+          duration: 2000
         });
-      }
-    });
+      });
   },
 
-  // 手动输入功能
   showManualInputDialog: function() {
     this.setData({
       showManualInput: true,
@@ -180,7 +515,6 @@ Page({
     });
   },
 
-  // 选择建议
   selectSuggestion: function(e) {
     const name = e.currentTarget.dataset.name;
     this.setData({
@@ -213,7 +547,6 @@ Page({
     });
   },
 
-  // 选择识别结果
   selectResult: function(e) {
     const index = e.currentTarget.dataset.index;
     this.setData({
@@ -221,9 +554,124 @@ Page({
     });
   },
 
-  // 确认选择并记录
+  compressImage: function(filePath) {
+    return new Promise((resolve, reject) => {
+      // 设置压缩超时时间为8秒（缩短超时时间）
+      const compressTimeout = setTimeout(() => {
+        console.error('图片压缩超时，使用原图');
+        resolve(filePath); // 超时后返回原图，不中断流程
+      }, 8000);
+      
+      console.log('开始压缩图片:', filePath);
+      
+      // 优化策略：优先使用微信官方压缩API，更高效稳定
+      wx.compressImage({
+        src: filePath,
+        quality: 60, // 降低质量到 60，更小的图片
+        success: (compressRes) => {
+          clearTimeout(compressTimeout);
+          console.log('使用微信压缩API成功:', compressRes.tempFilePath);
+          resolve(compressRes.tempFilePath);
+        },
+        fail: (compressErr) => {
+          clearTimeout(compressTimeout);
+          console.error('微信压缩API失败，获取图片信息尝试替代方案:', compressErr);
+          
+          // 如果压缩API失败，尝试获取图片信息决定是否需要压缩
+          wx.getImageInfo({
+            src: filePath,
+            success: (imageInfo) => {
+              console.log('原图信息:', imageInfo.width, 'x', imageInfo.height, 'bytes');
+              
+              // 对于较小的图片，直接返回原图
+              if (imageInfo.width <= 900 && imageInfo.height <= 900) {
+                console.log('图片尺寸合适，直接返回原图');
+                resolve(filePath);
+                return;
+              }
+              
+              // 仅在必要时才使用canvas进行压缩
+              try {
+                let targetWidth = imageInfo.width;
+                let targetHeight = imageInfo.height;
+                const maxDimension = 800;
+                
+                if (targetWidth > maxDimension || targetHeight > maxDimension) {
+                  const aspectRatio = targetWidth / targetHeight;
+                  if (aspectRatio > 1) {
+                    targetWidth = maxDimension;
+                    targetHeight = maxDimension / aspectRatio;
+                  } else {
+                    targetHeight = maxDimension;
+                    targetWidth = maxDimension * aspectRatio;
+                  }
+                }
+                
+                console.log('Canvas压缩目标尺寸:', targetWidth, 'x', targetHeight);
+                
+                // 创建新的超时保护canvas操作
+                const canvasTimeout = setTimeout(() => {
+                  console.error('Canvas操作超时，使用原图');
+                  resolve(filePath);
+                }, 5000);
+                
+                const ctx = wx.createCanvasContext('compressCanvas');
+                ctx.drawImage(filePath, 0, 0, targetWidth, targetHeight);
+                ctx.draw(false, () => {
+                  clearTimeout(canvasTimeout);
+                  wx.canvasToTempFilePath({
+                    canvasId: 'compressCanvas',
+                    x: 0,
+                    y: 0,
+                    width: targetWidth,
+                    height: targetHeight,
+                    destWidth: targetWidth,
+                    destHeight: targetHeight,
+                    quality: 0.7,
+                    success: (res) => {
+                      console.log('Canvas压缩成功:', res.tempFilePath);
+                      resolve(res.tempFilePath);
+                    },
+                    fail: (err) => {
+                      console.error('Canvas压缩也失败，使用原图:', err);
+                      resolve(filePath);
+                    }
+                  });
+                });
+              } catch (e) {
+                console.error('压缩过程异常:', e);
+                resolve(filePath);
+              }
+            },
+            fail: (err) => {
+              console.error('获取图片信息失败，使用原图:', err);
+              resolve(filePath);
+            }
+          });
+        }
+      });
+    });
+  },
+  
   confirmSelection: function() {
-    if (this.data.recognitionResults.length === 0) return;
+    // 记录开始时间
+    const startTime = Date.now();
+    console.log(`[调试信息] 确认选择开始 - 时间: ${new Date().toLocaleTimeString()}`);
+    
+    if (this.data.recognitionResults.length === 0) {
+      wx.showToast({
+        title: '请先选择一个昆虫',
+        icon: 'none'
+      });
+      console.log(`[调试信息] 未选择昆虫，操作中断 - 耗时: ${Date.now() - startTime}ms`);
+      return;
+    }
+    
+    // 显示明确的加载提示
+    wx.showLoading({
+      title: '正在保存...',
+      mask: true
+    });
     
     this.setData({
       isSaving: true,
@@ -231,152 +679,260 @@ Page({
     });
     
     const selectedResult = this.data.recognitionResults[this.data.selectedIndex];
-    
-    console.log('开始保存昆虫:', selectedResult.name);
-    
-    // 移除昆虫验证逻辑，让用户可以添加任何识别结果
-    
     const insectName = selectedResult.name;
+    console.log(`[调试信息] 选中昆虫: ${insectName} - 耗时: ${Date.now() - startTime}ms`);
     
-    // 额外重要修复：在保存昆虫前，主动清除该昆虫的所有相关缓存
-    // 确保重新添加的昆虫不会受到历史缓存的影响
+    // 初始化超时计时器变量
+    let saveTimeout, uploadTimeout, functionTimeout;
+    
+    // 添加总操作超时保护
+    saveTimeout = setTimeout(() => {
+      console.error('昆虫保存操作总超时');
+      this.setData({
+        isSaving: false,
+        saveError: '保存超时，请重试'
+      });
+      wx.hideLoading();
+      wx.showToast({
+        title: '网络连接较慢，请检查网络后重试',
+        icon: 'none',
+        duration: 4000
+      });
+    }, 80000); // 增加到80秒以适应复杂操作
+    
     try {
-      // 1. 清除发现次数缓存
+      console.log(`[调试信息] 开始缓存清理 - 耗时: ${Date.now() - startTime}ms`);
+      
+      // 清除相关缓存
       const localFoundCountCache = wx.getStorageSync('insectFoundCountCache') || {};
       const normalizedName = insectName.trim();
       const normalizedNameLower = normalizedName.toLowerCase();
       
-      // 清除所有可能的缓存键
       Object.keys(localFoundCountCache).forEach(key => {
         if (key === insectName || key.toLowerCase() === normalizedNameLower || key.includes(insectName)) {
           delete localFoundCountCache[key];
-          console.log(`清除发现次数缓存键: ${key}`);
+          console.log(`[调试信息] 清除发现次数缓存键: ${key}`);
         }
       });
       
       wx.setStorageSync('insectFoundCountCache', localFoundCountCache);
-      console.log(`已主动清除昆虫"${insectName}"的所有发现次数缓存`);
       
-      // 2. 清除详情页缓存 - 重要修复：确保清除所有相关缓存
-      const storageInfo = wx.getStorageInfoSync();
+      // 清除详情页缓存
+      try {
+        const storageInfo = wx.getStorageInfoSync();
+        const normalizedInsectName = this.normalizeInsectName(insectName);
+        const unifiedInsectId = this.generateInsectId(insectName);
+        
+        storageInfo.keys.forEach(key => {
+          if (key.includes('insect_detail_') && 
+              (key.includes(insectName) || 
+               key.includes(normalizedName) || 
+               key.includes(normalizedInsectName) ||
+               key.includes(unifiedInsectId))) {
+            wx.removeStorageSync(key);
+            console.log(`[调试信息] 清除详情页缓存键: ${key}`);
+          }
+        });
+      } catch (e) {
+        console.error('清除缓存时出错:', e);
+        // 缓存清除失败不影响主要流程
+      }
       
-      // 生成统一的昆虫ID，使用与云函数一致的方法
-      const normalizedInsectName = this.normalizeInsectName(insectName);
-      const unifiedInsectId = this.generateInsectId(insectName);
-      
-      storageInfo.keys.forEach(key => {
-        // 不仅检查名称，还要检查昆虫ID
-        if (key.includes('insect_detail_') && 
-            (key.includes(insectName) || 
-             key.includes(normalizedName) || 
-             key.includes(normalizedInsectName) ||
-             key.includes(unifiedInsectId))) {
-          wx.removeStorageSync(key);
-          console.log(`清除详情页缓存键: ${key}`);
-        }
-      });
-      
-      console.log(`已主动清除昆虫"${insectName}"的所有详情页缓存，包含名称和统一ID的缓存键`);
-      
-      console.log(`已主动清除昆虫"${insectName}"的所有详情页缓存，包含名称和统一ID的缓存键`);
+      console.log(`[调试信息] 缓存清理完成 - 耗时: ${Date.now() - startTime}ms`);
     } catch (e) {
-      console.error('清除缓存时出错:', e);
+      console.error('缓存处理异常:', e);
+      console.log(`[调试信息] 缓存处理异常 - 耗时: ${Date.now() - startTime}ms`);
+      // 继续执行主要逻辑
     }
     
-    // 上传用户拍摄的图片到云存储
-    wx.cloud.uploadFile({
-      cloudPath: `insects/${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`,
-      filePath: this.data.tempImagePath,
-      success: (uploadRes) => {
-        console.log('图片上传成功:', uploadRes.fileID);
+    console.log(`[调试信息] 开始图片压缩 - 耗时: ${Date.now() - startTime}ms`);
+    this.compressImage(this.data.tempImagePath)
+      .then(compressedFilePath => {
+        console.log(`[调试信息] 图片压缩完成，准备上传 - 压缩后路径: ${compressedFilePath} - 耗时: ${Date.now() - startTime}ms`);
         
-        // 调用云函数保存（不再自己生成ID，由云函数统一处理）
-        wx.cloud.callFunction({
-          name: 'markFound',
-          data: {
-            name: selectedResult.name,
-            baikeInfo: selectedResult.baike_info || {},
-            // 重要：通过拍照/上传照片识别并确认发现时，明确标记为新发现
-            isNewDiscovery: true,
-            // 传递用户拍摄的图片URL
-            userImageUrl: uploadRes.fileID
-          },
-          success: (res) => {
-        console.log('云函数返回:', res);
-        
-        const result = res.result || {};
-        
-        this.setData({
-          isSaving: false
-        });
-        
-        if (result.success) {
-          let message = '昆虫记录保存成功';
-          
-          wx.showToast({
-            title: message,
-            icon: 'success',
-            duration: 2000
-          });
-          
-          // 重要修复：设置全局标记，告知首页需要刷新数据
-          const app = getApp();
-          app.globalData.needRefreshHomePage = true;
-          app.globalData.fromCameraPage = true; // 同时设置这个标记，以防用户直接从其他地方进入详情页
-          
-          setTimeout(() => {
-            wx.switchTab({
-              url: '/pages/index/index'
-            });
-          }, 2000);
-        } else {
+        // 添加图片上传超时保护
+        uploadTimeout = setTimeout(() => {
+          console.error('图片上传超时');
+          clearTimeout(saveTimeout);
           this.setData({
-            saveError: result.message || '保存失败'
+            isSaving: false,
+            saveError: '图片上传超时'
           });
+          wx.hideLoading();
           wx.showToast({
-            title: result.message || '保存失败',
+            title: '图片上传较慢，请检查网络',
             icon: 'none',
-            duration: 3000
+            duration: 4000
           });
-        }
-      },
-      fail: (err) => {
-        console.error('调用云函数失败:', err);
+        }, 40000); // 增加到40秒
+        
+        wx.cloud.uploadFile({
+          cloudPath: `insects/${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`,
+          filePath: compressedFilePath,
+          success: (uploadRes) => {
+            clearTimeout(uploadTimeout);
+            console.log(`[调试信息] 图片上传成功: ${uploadRes.fileID} - 耗时: ${Date.now() - startTime}ms`);
+            
+            // 添加云函数调用超时保护
+            functionTimeout = setTimeout(() => {
+              console.error('云函数调用超时');
+              clearTimeout(saveTimeout);
+              wx.hideLoading();
+              this.setData({
+                isSaving: false,
+                saveError: '服务器处理超时'
+              });
+              wx.showToast({
+                title: '数据处理中，请耐心等待...',
+                icon: 'loading',
+                duration: 3000
+              });
+              
+              // 5秒后再次尝试提示用户
+              setTimeout(() => {
+                if (!this.data.isSaving) {
+                  wx.showModal({
+                    title: '提示',
+                    content: '处理时间较长，是否重试？',
+                    success: (res) => {
+                      if (res.confirm) {
+                        // 重新调用保存方法
+                        this.confirmSelection();
+                      }
+                    }
+                  });
+                }
+              }, 5000);
+            }, 60000); // 增加到60秒
+            
+            console.log(`[调试信息] 开始调用markFound云函数 - 耗时: ${Date.now() - startTime}ms`);
+            // 优先使用图片拍摄时间，没有则使用当前时间
+            const discoveryTimestamp = this.data.photoTimestamp || Date.now();
+            const timestampSource = this.data.photoTimestamp ? '图片拍摄时间' : '当前时间';
+            const timestampDate = new Date(discoveryTimestamp);
+            console.log('【调试】使用的发现时间:', discoveryTimestamp);
+            console.log('【调试】时间来源:', timestampSource);
+            console.log('【调试】格式化时间:', timestampDate.toLocaleString('zh-CN'));
+            console.log('【调试】是否来自原始拍摄时间:', !!this.data.photoTimestamp);
+            
+            wx.cloud.callFunction({
+              name: 'markFound',
+              data: {
+                name: selectedResult.name,
+                baikeInfo: selectedResult.baike_info || {},
+                isNewDiscovery: true,
+                userImageUrl: uploadRes.fileID,
+                clientTimestamp: discoveryTimestamp
+              },
+              success: (res) => {
+                // 清除所有超时计时器
+                clearTimeout(functionTimeout);
+                clearTimeout(uploadTimeout);
+                clearTimeout(saveTimeout);
+                
+                console.log(`[调试信息] 云函数调用成功，总耗时: ${Date.now() - startTime}ms`);
+                console.log('云函数返回:', res);
+                
+                const result = res.result || {};
+                
+                this.setData({
+                  isSaving: false
+                });
+                
+                wx.hideLoading();
+                
+                if (result.success) {
+                  // 显示成功提示并导航
+                  wx.showToast({
+                    title: '昆虫记录保存成功',
+                    icon: 'success',
+                    duration: 1500
+                  });
+                  
+                  const app = getApp();
+                  app.globalData.needRefreshHomePage = true;
+                  app.globalData.fromCameraPage = true;
+                  
+                  setTimeout(() => {
+                    wx.switchTab({
+                      url: '/pages/index/index'
+                    });
+                  }, 1500);
+                } else {
+                  this.setData({
+                    saveError: result.message || '保存失败'
+                  });
+                  wx.showModal({
+                    title: '保存失败',
+                    content: result.message || '保存失败，请重试',
+                    showCancel: false,
+                    confirmText: '确定'
+                  });
+                }
+              },
+              fail: (err) => {
+                // 清除所有超时计时器
+                clearTimeout(functionTimeout);
+                clearTimeout(uploadTimeout);
+                clearTimeout(saveTimeout);
+                
+                wx.hideLoading();
+                console.error(`[调试信息] 调用云函数失败 (总耗时: ${Date.now() - startTime}ms):`, err);
+                this.setData({
+                  isSaving: false,
+                  saveError: '网络错误: ' + (err.errMsg || '未知错误')
+                });
+                wx.showModal({
+                  title: '网络错误',
+                  content: '保存过程中出现网络问题，请检查网络后重试',
+                  showCancel: false,
+                  confirmText: '确定'
+                });
+              }
+            });
+          },
+          fail: (uploadErr) => {
+            // 清除所有超时计时器
+            clearTimeout(uploadTimeout);
+            clearTimeout(saveTimeout);
+            
+            wx.hideLoading();
+            console.error(`[调试信息] 图片上传失败 (总耗时: ${Date.now() - startTime}ms):`, uploadErr);
+            this.setData({
+              isSaving: false,
+              saveError: '图片上传失败'
+            });
+            wx.showModal({
+              title: '上传失败',
+              content: '图片上传失败，请重试',
+              showCancel: false,
+              confirmText: '确定'
+            });
+          }
+        });
+      })
+      .catch(compressError => {
+        clearTimeout(saveTimeout);
+        wx.hideLoading();
+        console.error(`[调试信息] 图片压缩失败 (总耗时: ${Date.now() - startTime}ms):`, compressError);
         this.setData({
           isSaving: false,
-          saveError: '网络错误: ' + (err.errMsg || '未知错误')
+          saveError: '图片处理失败'
         });
-        wx.showToast({
-          title: '网络错误，请重试',
-          icon: 'none',
-          duration: 3000
+        wx.showModal({
+          title: '处理失败',
+          content: '图片处理失败，请重试',
+          showCancel: false,
+          confirmText: '确定'
         });
-      }
-    });
-      },
-      fail: (uploadErr) => {
-        console.error('图片上传失败:', uploadErr);
-        this.setData({
-          isSaving: false,
-          saveError: '图片上传失败'
-        });
-        wx.showToast({
-          title: '图片上传失败，请重试',
-          icon: 'none',
-          duration: 3000
-        });
-      }
-    });
+      });
   },
 
-  // 生成统一的昆虫ID（与云函数保持一致）
   generateInsectId: function(name) {
     const normalizedName = this.normalizeInsectName(name);
-    // 只使用标准化名称生成ID，不添加时间戳，与云函数保持一致
     return normalizedName.replace(/[^a-zA-Z0-9一-龥]/g, '');
   },
   
-  // 标准化昆虫名称（与云函数保持一致）
   normalizeInsectName: function(name) {
     const INSECT_NAME_MAP = {
       '螳螂': '螳螂',
@@ -410,44 +966,36 @@ Page({
     return INSECT_NAME_MAP[name] || name;
   },
 
-  // 图片加载完成
   imageLoad: function(e) {
     console.log('图片加载完成:', e.detail);
     this.setData({
       imageWidth: e.detail.width,
       imageHeight: e.detail.height,
       scale: 1,
-      // 设置预览区域尺寸
-      previewWidth: 750, // 假设屏幕宽度为750rpx
-      previewHeight: 500 // 预览区域高度固定为500rpx
+      previewWidth: 750,
+      previewHeight: 500
     });
   },
 
-  // 识别框内区域 - 已被移除，保留函数防止引用错误
   recognizeSelectedArea: function() {
     this.recognizeAgain();
   },
 
-  // 图片加载失败
   imageError: function(e) {
-    console.error('图片加载失败:', e.detail);
+    console.error('图片加载失败:', e.detail.errMsg);
     wx.showToast({
       title: '图片加载失败',
       icon: 'none'
     });
   },
-
-  // 初始化节流定时器
+  
   lastTouchMoveTime: 0,
   touchMoveDebounceTimer: null,
   
-  // 长按相关状态
   isLongPress: false,
   longPressTimer: null,
   
-  // 触摸开始事件
   touchStart: function(e) {
-    // 清除之前的长按定时器
     if (this.longPressTimer) {
       clearTimeout(this.longPressTimer);
       this.longPressTimer = null;
@@ -465,32 +1013,26 @@ Page({
         startY: e.touches[0].clientY
       });
       
-      // 设置长按检测定时器
       const that = this;
       this.longPressTimer = setTimeout(function() {
         that.isLongPress = true;
-      }, 350); // 350ms为长按阈值
+      }, 350);
     }
   },
   
-  // 触摸移动事件（用于缩放和移动）
   touchMove: function(e) {
-    // 取消长按检测
     if (this.longPressTimer) {
       clearTimeout(this.longPressTimer);
       this.longPressTimer = null;
     }
     
-    // 使用节流优化减少频繁更新导致的页面闪动
     const currentTime = new Date().getTime();
-    if (this.lastTouchMoveTime && (currentTime - this.lastTouchMoveTime) < 16) { // 约60fps
+    if (this.lastTouchMoveTime && (currentTime - this.lastTouchMoveTime) < 16) {
       return;
     }
     this.lastTouchMoveTime = currentTime;
     
-    // 双指缩放逻辑
     if (e.touches.length === 2) {
-      // 确保touchPoints设置正确
       if (this.data.touchPoints !== 2) {
         this.setData({
           touchPoints: 2,
@@ -503,35 +1045,26 @@ Page({
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       
-      // 计算两指之间的距离
       const distance = Math.sqrt(
         Math.pow(touch2.clientX - touch1.clientX, 2) + 
         Math.pow(touch2.clientY - touch1.clientY, 2)
       );
       
       if (this.data.initialDistance === 0) {
-        // 记录初始距离
         this.setData({
           initialDistance: distance
         });
       } else {
-        // 计算缩放比例
         const scale = (distance / this.data.initialDistance) * this.data.lastScale;
-        // 增加缩放范围（0.5倍到3倍）
         const clampedScale = Math.max(0.5, Math.min(3, scale));
         
-        // 只有当缩放值有明显变化时才更新，减少不必要的重绘
         if (Math.abs(clampedScale - this.data.scale) > 0.01) {
-          // 直接更新，避免requestAnimationFrame可能的兼容性问题
           this.setData({
             scale: clampedScale
           });
         }
       }
-    } 
-    // 单指移动逻辑
-    else if (e.touches.length === 1 && !this.isLongPress) {
-      // 确保touchPoints设置正确
+    } else if (e.touches.length === 1 && !this.isLongPress) {
       if (this.data.touchPoints !== 1) {
         this.setData({
           touchPoints: 1
@@ -542,49 +1075,40 @@ Page({
       const deltaX = e.touches[0].clientX - this.data.startX;
       const deltaY = e.touches[0].clientY - this.data.startY;
       
-      // 只有当移动距离超过阈值时才处理，减少抖动
       if (Math.abs(deltaX) < 2 && Math.abs(deltaY) < 2) {
         return;
       }
       
-      // 计算新位置
       let newX = this.data.imagePosition.x + deltaX;
       let newY = this.data.imagePosition.y + deltaY;
       
-      // 添加边界检查，限制图片在容器范围内移动
-      // 优化：只在首次需要时获取系统信息并缓存
       if (!this.systemInfo) {
         this.systemInfo = wx.getSystemInfoSync();
       }
-      const containerWidth = (this.systemInfo.windowWidth * 0.92); // 考虑左右padding后的容器宽度
-      const containerHeight = 500 * this.systemInfo.windowWidth / 750; // 将rpx转换为实际像素
+      const containerWidth = (this.systemInfo.windowWidth * 0.92);
+      const containerHeight = 500 * this.systemInfo.windowWidth / 750;
       
-      // 计算图片缩放后的尺寸
       const scaledImageWidth = this.data.imageWidth * this.data.scale;
       const scaledImageHeight = this.data.imageHeight * this.data.scale;
       
-      // 计算最大可移动距离
       const maxMoveX = (scaledImageWidth - containerWidth) / 2;
       const maxMoveY = (scaledImageHeight - containerHeight) / 2;
       
-      // 限制移动范围
       if (maxMoveX > 0) {
         newX = Math.max(-maxMoveX, Math.min(maxMoveX, newX));
       } else {
-        newX = 0; // 如果图片比容器小，不允许移动
+        newX = 0;
       }
       
       if (maxMoveY > 0) {
         newY = Math.max(-maxMoveY, Math.min(maxMoveY, newY));
       } else {
-        newY = 0; // 如果图片比容器小，不允许移动
+        newY = 0;
       }
       
-      // 保存新的startX和startY
       const newStartX = e.touches[0].clientX;
       const newStartY = e.touches[0].clientY;
       
-      // 直接更新数据，避免requestAnimationFrame可能的兼容性问题
       this.setData({
         imagePosition: { x: newX, y: newY },
         startX: newStartX,
@@ -593,7 +1117,6 @@ Page({
     }
   },
   
-  // 使用requestAnimationFrame进行批量更新优化
   scheduleUpdate: function(callback) {
     if (!this.updateRequest) {
       const that = this;
@@ -604,9 +1127,7 @@ Page({
     }
   },
 
-  // 触摸结束事件
   touchEnd: function(e) {
-    // 清除长按定时器并重置长按状态
     if (this.longPressTimer) {
       clearTimeout(this.longPressTimer);
       this.longPressTimer = null;
@@ -620,12 +1141,10 @@ Page({
     });
   },
   
-  // 触摸取消事件处理（防止意外情况）
   touchCancel: function(e) {
     this.touchEnd(e);
   },
 
-  // 重置，重新拍摄
   reset: function() {
     this.setData({
       hasResult: false,
@@ -640,22 +1159,32 @@ Page({
       saveError: '',
       scale: 1,
       touchPoints: 0,
-      imagePosition: { x: 0, y: 0 }
+      imagePosition: { x: 0, y: 0 },
+      photoTimestamp: null
     });
   },
 
-  // 再次识别
   recognizeAgain: function() {
-    if (this.data.tempImagePath) {
-      // 重置识别相关状态，但保留图片缩放和位置状态
-      this.setData({
-        recognitionResults: [],
-        isNotAnimal: false,
-        saveError: ''
-        // 不再重置scale和imagePosition，保留用户调整后的状态
+    if (!this.data.tempImagePath) {
+      wx.showToast({
+        title: '没有图片可识别',
+        icon: 'none'
       });
-      // 调用识别函数
-      this.recognizeInsect(this.data.tempImagePath);
+      return;
     }
+    
+    // 直接使用原图识别（缩放只是视觉辅助）
+    console.log('重新识别，使用原图');
+    this.recognizeOriginalImage();
+  },
+  
+  // 使用原图识别
+  recognizeOriginalImage: function() {
+    this.setData({
+      recognitionResults: [],
+      isNotAnimal: false,
+      saveError: ''
+    });
+    this.recognizeInsect(this.data.tempImagePath);
   }
 });

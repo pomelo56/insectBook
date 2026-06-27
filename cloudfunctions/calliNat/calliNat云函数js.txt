@@ -1,0 +1,281 @@
+// cloudfunctions/calliNat/index.js - 简化版本
+const cloud = require('wx-server-sdk');
+const rp = require('request-promise');
+
+// 初始化云函数
+cloud.init({
+  env: cloud.DYNAMIC_CURRENT_ENV
+});
+
+// 简化的配置常量
+const CONFIG = {
+  API_TIMEOUT: 15000,  // 增加超时时间确保请求完成
+  API_ENDPOINT: process.env.ARK_BASE_URL ? 
+    `${process.env.ARK_BASE_URL.endsWith('/') ? process.env.ARK_BASE_URL : process.env.ARK_BASE_URL + '/'}chat/completions` :
+    'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+  MODEL_ID: process.env.MODEL_ID || 'doubao-seed-1-6-vision-250815'
+};
+
+/**
+ * 获取调试时间戳
+ */
+function getDebugTimestamp() {
+  return new Date().toISOString().replace('T', ' ').substring(0, 23);
+}
+
+/**
+ * 简化的图片处理函数
+ * @param {string} base64Image - 原始图片的Base64字符串
+ * @returns {string} 处理后的Base64字符串
+ */
+function processImage(base64Image) {
+  try {
+    console.log(`[${getDebugTimestamp()}] 开始图片处理`);
+    
+    // 简单移除base64前缀
+    let cleanBase64 = base64Image;
+    if (base64Image.includes(',')) {
+      cleanBase64 = base64Image.split(',')[1];
+    }
+    
+    // 计算图片大小
+    const originalSize = Buffer.from(cleanBase64, 'base64').length;
+    const originalSizeKB = Math.round(originalSize / 1024);
+    console.log(`[${getDebugTimestamp()}] 原始图片大小: ${originalSizeKB}KB`);
+    
+    // 使用干净的base64，不包含前缀
+    let compressedBase64 = cleanBase64;
+    
+    // 设置最大请求大小
+    const maxBase64Size = 25 * 1024 * 0.8; // 25KB，留出20%余量
+    
+    // 如果base64字符串长度超过最大限制，需要进行压缩
+    if (compressedBase64.length > maxBase64Size) {
+      // 计算需要压缩到的长度
+      let targetLength = Math.floor(maxBase64Size);
+      
+      // 确保targetLength是base64编码的有效长度（必须是4的倍数）
+      targetLength = Math.floor(targetLength / 4) * 4;
+      
+      if (targetLength < compressedBase64.length && targetLength > 0) {
+        // 只在有效长度处截断
+        compressedBase64 = compressedBase64.substring(0, targetLength);
+        
+        // 确保base64填充正确
+        const paddingNeeded = 4 - (targetLength % 4);
+        if (paddingNeeded < 4) {
+          compressedBase64 += '='.repeat(paddingNeeded);
+        }
+        
+        console.log(`[${getDebugTimestamp()}] 已对图片进行压缩处理，从 ${cleanBase64.length} 字符减少到 ${compressedBase64.length} 字符`);
+      }
+    }
+    
+    console.log(`[${getDebugTimestamp()}] 图片压缩完成`);
+    return compressedBase64;
+  } catch (error) {
+    console.error(`[${getDebugTimestamp()}] 图片处理失败: ${error.message}`);
+    // 压缩失败时返回干净的base64数据（移除前缀）
+    const cleanBase64 = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+    return cleanBase64;
+  }
+}
+
+/**
+ * 生成基础昆虫信息结构
+ * @param {string} name - 昆虫名称
+ * @param {string} className - 昆虫分类
+ * @returns {Object} 昆虫基础信息
+ */
+function createBasicInsectInfo(name, className) {
+  return {
+    name: name,
+    score: 0.0,
+    reasoning_content: '', // 确保包含reasoning_content字段
+    baike_info: {
+      classname: className,
+      description: '未能获取详细信息',
+      place: '未知',
+      food: '未知'
+    }
+  };
+}
+
+/**
+ * 简化的请求函数
+ * @param {Object} options - 请求选项
+ * @returns {Promise<Object>} 响应结果
+ */
+async function sendRequest(options) {
+  try {
+    console.log(`[${getDebugTimestamp()}] 发送API请求`);
+    // 记录请求参数大小
+    const requestSize = JSON.stringify(options.body).length;
+    console.log(`[${getDebugTimestamp()}] 请求体大小: ${Math.round(requestSize / 1024)}KB`);
+    
+    options.timeout = CONFIG.API_TIMEOUT;
+    const response = await rp(options);
+    return response;
+  } catch (error) {
+    console.error(`[${getDebugTimestamp()}] API请求失败: ${error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * 昆虫识别核心函数
+ * @param {string} imageBase64 - 图片的Base64编码
+ * @returns {Promise<Object>} 识别结果
+ */
+async function recognizeInsect(imageBase64) {
+  console.log(`[${getDebugTimestamp()}] 开始昆虫识别处理`);
+  
+  // 验证API密钥
+  if (!process.env.ARK_API_KEY || process.env.ARK_API_KEY.trim().length < 10) {
+    console.error(`[${getDebugTimestamp()}] API密钥无效或未配置`);
+    throw new Error('API密钥无效或未配置');
+  }
+
+  try {
+    // 处理图片
+    const compressedImage = processImage(imageBase64);
+    
+    // 添加详细的请求信息日志
+    console.log(`[${getDebugTimestamp()}] 准备向${CONFIG.MODEL_ID}发送昆虫识别请求`);
+    
+    // 使用极简提示词，确保返回具体物种名称
+    const prompt = "识别这张照片中的昆虫，仅返回具体物种名称（到种，如"东亚飞蝗"），不要其他内容。";
+    console.log(`[${getDebugTimestamp()}] 使用极简提示词进行识别`);
+    
+    // 简化的API请求参数
+    const requestOptions = {
+      method: 'POST',
+      uri: CONFIG.API_ENDPOINT,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.ARK_API_KEY}`
+      },
+      body: {
+        model: CONFIG.MODEL_ID,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: prompt
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/jpeg;base64,${compressedImage}`
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 50,
+        // 添加temperature参数确保输出确定性
+        temperature: 0.0
+      },
+      json: true
+    };
+    
+    // 发送请求
+    const response = await sendRequest(requestOptions);
+    
+    // 增强调试信息
+    console.log(`[${getDebugTimestamp()}] API响应接收成功`);
+    if (response && response.choices && response.choices.length > 0) {
+      const insectName = response.choices[0].message?.content || '未识别出昆虫';
+      console.log(`[${getDebugTimestamp()}] 识别结果: ${insectName}`);
+    } else {
+      console.log(`[${getDebugTimestamp()}] API返回了空结果`);
+    }
+    
+    // 返回处理后的结果
+    return {
+      ...response,
+      debugInfo: {
+        timestamp: getDebugTimestamp(),
+        imageSizeKB: Math.round(Buffer.from(compressedImage, 'base64').length / 1024),
+        promptUsed: prompt
+      }
+    };
+    
+  } catch (error) {
+    console.error(`[${getDebugTimestamp()}] 昆虫识别失败: ${error.message}`);
+    return {
+      success: false,
+      message: `识别失败: ${error.message}`,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * 云函数主入口
+ */
+exports.main = async (event, context) => {
+  console.log(`[${getDebugTimestamp()}] calliNat云函数（简化版）开始执行`);
+  
+  try {
+    // 获取图片数据
+    let imageBase64 = event.imageBase64 || event.image || event.img;
+    
+    // 简单验证图片数据
+    if (!imageBase64 || typeof imageBase64 !== 'string' || imageBase64.trim().length === 0) {
+      console.error(`[${getDebugTimestamp()}] 无效的图片数据`);
+      return {
+        success: false,
+        message: '图片数据无效'
+      };
+    }
+    
+    // 清理Base64数据
+    imageBase64 = imageBase64.trim();
+    if (imageBase64.startsWith('data:image')) {
+      const base64StartIndex = imageBase64.indexOf('base64,');
+      if (base64StartIndex !== -1) {
+        imageBase64 = imageBase64.substring(base64StartIndex + 7);
+      }
+    }
+    
+    // 调用识别函数
+    const startTime = Date.now();
+    const response = await recognizeInsect(imageBase64);
+    const processingTime = Date.now() - startTime;
+    
+    console.log(`[${getDebugTimestamp()}] 请求完成，处理时间: ${processingTime}ms`);
+    
+    // 增强返回信息，确保格式统一
+    const finalResult = {
+      success: true,
+      message: '请求成功',
+      data: response,
+      processingTimeMs: processingTime,
+      debugInfo: {
+        timestamp: getDebugTimestamp(),
+        functionName: 'calliNat',
+        imageProcessed: true,
+        apiCalled: true,
+        // 提取识别的昆虫名称用于直接展示
+        recognizedInsectName: response.choices?.[0]?.message?.content?.trim() || '未识别出昆虫'
+      }
+    };
+    
+    console.log(`[${getDebugTimestamp()}] 最终返回结果:`, finalResult.debugInfo.recognizedInsectName);
+    return finalResult;
+    
+  } catch (error) {
+    console.error(`[${getDebugTimestamp()}] 云函数执行异常:`, error);
+    
+    return {
+      success: false,
+      message: `请求失败: ${error.message}`,
+      error: error.message
+    };
+  } finally {
+    console.log(`[${getDebugTimestamp()}] calliNat云函数执行结束`);
+  }
+};

@@ -1,0 +1,89 @@
+// 昆虫数据迁移云函数 - 为现有昆虫添加externalId
+const cloud = require('wx-server-sdk');
+
+// 初始化云环境
+cloud.init({
+  env: cloud.DYNAMIC_CURRENT_ENV
+});
+
+const db = cloud.database();
+
+// 生成昆虫外部ID的函数
+function generateInsectExternalId(insectName, existingCount = 0) {
+  // 基本转换：移除真正的特殊字符，保留中文字符、字母数字和下划线
+  // 只移除空格、连字符以及其他非文字和数字字符
+  const cleanName = insectName
+    .replace(/[\s\-]/g, '_')
+    .replace(/[`~!@#$%^&*()+=\[\]{};:'"\\|,.<>\/?]/g, '');
+  
+  // 添加唯一后缀
+  const suffix = existingCount > 0 ? `_${existingCount}` : '';
+  
+  // 限制长度在50个字符以内
+  let finalId = cleanName.substring(0, 50 - suffix.length) + suffix;
+  
+  // 确保不以数字开头（如果最终ID不为空）
+  if (finalId && /^\d/.test(finalId)) {
+    finalId = `insect_${finalId}`;
+  }
+  
+  // 如果处理后为空，则使用名称的哈希码
+  if (!finalId || finalId === '_') {
+    const hash = insectName.split('').reduce((acc, char) => {
+      return acc + char.charCodeAt(0);
+    }, 0).toString(36);
+    finalId = `insect_${hash}${suffix}`;
+  }
+  
+  return finalId;
+}
+
+// 云函数入口函数
+exports.main = async (event, context) => {
+  console.log('开始昆虫数据迁移...');
+  
+  try {
+    // 获取所有没有externalId的昆虫记录
+    const insectsWithoutExternalId = await db.collection('insects')
+      .where({ externalId: db.command.exists(false) })
+      .get();
+    
+    console.log(`找到 ${insectsWithoutExternalId.data.length} 条需要添加externalId的昆虫记录`);
+    
+    // 记录每个名称生成的次数，用于处理重复名称
+    const nameCountMap = {};
+    
+    // 批量更新昆虫记录
+    for (const insect of insectsWithoutExternalId.data) {
+      // 增加该名称的计数
+      const insectName = insect.name || 'unknown_insect';
+      nameCountMap[insectName] = (nameCountMap[insectName] || 0) + 1;
+      
+      // 生成externalId
+      const externalId = generateInsectExternalId(insectName, nameCountMap[insectName] - 1);
+      
+      // 更新记录
+      await db.collection('insects').doc(insect._id).update({
+        data: {
+          externalId: externalId,
+          updatedAt: db.serverDate()
+        }
+      });
+      
+      console.log(`已为昆虫 ${insectName} (${insect._id}) 添加externalId: ${externalId}`);
+    }
+    
+    console.log('昆虫数据迁移完成！');
+    return {
+      success: true,
+      count: insectsWithoutExternalId.data.length,
+      message: `成功为 ${insectsWithoutExternalId.data.length} 条昆虫记录添加了externalId`
+    };
+  } catch (error) {
+    console.error('迁移过程中发生错误:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};

@@ -1,5 +1,9 @@
 // pages/index/index.js
 const app = getApp();
+// 统一封装：关键词 → 百度直链
+import { getBaiduImageUrl, clearImageCache } from '../../utils/imageHelper.js';
+// 引入昆虫冷知识数据（暂时保留本地数据作为备用）
+import { insectColdKnowledge, clothingTips, observationTips } from '../../utils/insectColdKnowledge.js';
 
 Page({
   data: {
@@ -7,824 +11,939 @@ Page({
     totalCount: 0,
     progressPercent: 0,
     recentInsects: [],
-    // 用户等级徽章信息 - 临时设定，预留后续调整空间
-    currentBadge: {
-      level: 1,
-      name: '昆虫萌新',
-      icon: '/images/icons/bug1.svg',
-      progress: '1/15'
-    }
+    currentBadge: {},
+    // 昆虫冷知识相关数据
+    currentKnowledge: {},
+    clothingTip: '',
+    observationTip: '',
+    isTransitioning: false,
+    // 管理权限相关
+    isAdmin: false,
+    showAdminEntrance: false,
+    isLoadingAdminCheck: true,
+    // 分页相关
+    currentPage: 1,
+    pageSize: 10, // 统一的分页大小
+    hasMoreData: true
   },
 
-  onLoad: function() {
-    this.loadUserData();
-  },
-
-  onShow: function() {
-    const app = getApp();
-    // 每次页面显示都重新加载数据，确保数据最新
-    console.log('页面显示，刷新首页数据');
-    // 如果检测到需要刷新数据的标记，则先清除本地缓存再重新加载
-    if (app.globalData.needRefreshHomePage) {
-      console.log('检测到需要刷新首页数据的标记，开始强制刷新');
-      // 清除首页相关的本地缓存
-      wx.removeStorageSync('user_insects_list');
-      wx.removeStorageSync('recent_insects');
-      // 重置标记
-      app.globalData.needRefreshHomePage = false;
+  async onLoad() {
+    // 初始化防止重复加载的标记
+    this._isLoading = false;
+    
+    // 仅在版本更新或首次启动时清除缓存
+    const appVersion = app.globalData.version || '1.0.0';
+    const cachedVersion = wx.getStorageSync('cached_app_version');
+    if (appVersion !== cachedVersion) {
+      clearImageCache();
+      wx.setStorageSync('cached_app_version', appVersion);
+      console.log('应用版本变化，已清除缓存');
     }
+    
+    // 优先加载缓存的等级信息，避免等待数据加载时显示空白
+    this.loadCachedLevel();
+    
+    // 初始化等级配置（异步加载）
+    this.loadUserLevelConfig().then(config => {
+      // 配置加载完成后，重新计算用户等级
+      this.updateUserLevelWithConfig(this.data.collectedCount, config);
+    });
+    
     this.loadUserData();
+    this.initColdKnowledge();
+    // 启动自动切换定时器
+    this.startKnowledgeTimer();
+    
+    // 检查管理员权限
+    this.checkAdminPermission();
   },
   
-  // 页面初次渲染完成后调用
-  onReady: function() {
-    // 页面渲染完成后，触发图片自动补齐功能
+  // 加载缓存的等级信息
+  loadCachedLevel() {
+    try {
+      const cachedLevel = wx.getStorageSync('cached_user_level');
+      if (cachedLevel) {
+        this.setData({
+          currentBadge: cachedLevel
+        });
+      }
+    } catch (e) {
+      console.error('加载缓存等级失败:', e);
+    }
+  },
+  
+  // 初始化昆虫冷知识
+  initColdKnowledge() {
+    // 优先从缓存加载冷知识
+    const cachedKnowledge = wx.getStorageSync('cached_cold_knowledge');
+    if (cachedKnowledge) {
+      this.setData({
+        currentKnowledge: cachedKnowledge.knowledge,
+        clothingTip: cachedKnowledge.clothingTip,
+        observationTip: cachedKnowledge.observationTip
+      });
+      // 后台加载最新数据
+      this.loadColdKnowledgeFromDatabase();
+    } else {
+      // 缓存不存在时，先显示本地数据，然后加载数据库数据
+      this.loadLocalColdKnowledge();
+      this.loadColdKnowledgeFromDatabase();
+    }
+  },
+  
+  // 从数据库加载冷知识
+  async loadColdKnowledgeFromDatabase() {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'getFunFactsList',
+        data: { 
+          pageNum: 1, 
+          pageSize: 50  // 获取足够数量的冷知识
+        }
+      });
+      
+      if (result.result && result.result.success && result.result.funFacts.length > 0) {
+        const funFacts = result.result.funFacts;
+        
+        // 随机选择一条冷知识
+        const randomIndex = Math.floor(Math.random() * funFacts.length);
+        const selectedFact = funFacts[randomIndex];
+        
+        // 构建冷知识数据结构
+        const knowledgeData = {
+          id: selectedFact.id || selectedFact._id,
+          category: '管理后台冷知识',
+          content: selectedFact.content,
+          related_insects: selectedFact.insectName ? selectedFact.insectName.split(',').map(name => name.trim()) : [],
+          seasonal_tips: []
+        };
+        
+        // 随机选择观察提示和衣物建议（使用本地数据）
+        const randomObservationTip = observationTips[Math.floor(Math.random() * observationTips.length)];
+        const clothingAdvice = clothingTips.general_advice || clothingTips[Math.floor(Math.random() * clothingTips.length)];
+        
+        // 缓存数据
+        const cacheData = {
+          knowledge: knowledgeData,
+          clothingTip: clothingAdvice,
+          observationTip: randomObservationTip,
+          timestamp: Date.now()
+        };
+        
+        wx.setStorageSync('cached_cold_knowledge', cacheData);
+        
+        // 更新UI
+        this.setData({
+          currentKnowledge: knowledgeData,
+          clothingTip: clothingAdvice,
+          observationTip: randomObservationTip
+        });
+      } else {
+        this.loadLocalColdKnowledge();
+      }
+    } catch (error) {
+      // 数据库加载失败时，使用本地数据
+      this.loadLocalColdKnowledge();
+    }
+  },
+  
+  // 加载本地冷知识（备用方案）
+  loadLocalColdKnowledge() {
+    try {
+      // 随机选择一条冷知识
+      const randomIndex = Math.floor(Math.random() * insectColdKnowledge.length);
+      const randomKnowledge = insectColdKnowledge[randomIndex];
+      
+      // 随机选择一条观察提示
+      const randomObservationTip = observationTips[Math.floor(Math.random() * observationTips.length)];
+      
+      // 获取衣物建议
+      const clothingAdvice = clothingTips.general_advice || clothingTips[Math.floor(Math.random() * clothingTips.length)];
+      
+      // 确保数据格式完整
+      const knowledgeWithDefaults = {
+        ...randomKnowledge,
+        related_insects: randomKnowledge.related_insects || [],
+        seasonal_tips: randomKnowledge.seasonal_tips || []
+      };
+      
+      this.setData({
+        currentKnowledge: knowledgeWithDefaults,
+        clothingTip: clothingAdvice,
+        observationTip: randomObservationTip
+      });
+    } catch (error) {
+      // 设置默认值以防出错
+      this.setData({
+        currentKnowledge: {
+          id: "default",
+          category: "默认知识",
+          content: "昆虫是地球上种类最多的动物群体",
+          related_insects: ["昆虫"],
+          seasonal_tips: [{
+            month: "全年",
+            description: "昆虫在各种环境中都能生存",
+            tips: "保持好奇心，发现更多昆虫世界的奥秘",
+            active_insects: ["蚂蚁", "蝴蝶"]
+          }]
+        },
+        observationTip: "观察昆虫时保持安静，不要惊吓它们",
+        clothingTip: "野外观察昆虫时建议穿长袖衣物"
+      });
+    }
+  },
+  
+  // 启动自动切换冷知识的定时器
+  startKnowledgeTimer() {
+    // 清除可能存在的旧定时器
+    if (this.knowledgeTimer) {
+      clearInterval(this.knowledgeTimer);
+    }
+    
+    // 设置新的定时器，每6秒切换一次冷知识
+    this.knowledgeTimer = setInterval(() => {
+      this.switchKnowledgeWithTransition();
+    }, 6000);
+  },
+  
+  // 带过渡效果的冷知识切换
+  switchKnowledgeWithTransition() {
+    if (this.data.isTransitioning) return;
+    
+    this.setData({
+      isTransitioning: true
+    });
+    
+    // 等待淡出动画完成后切换内容
+    setTimeout(() => {
+      this.initColdKnowledge();
+      
+      // 新内容会自动触发淡入动画
+      setTimeout(() => {
+        this.setData({
+          isTransitioning: false
+        });
+      }, 50);
+    }, 300);
+  },
+  
+  // 清除定时器
+  clearKnowledgeTimer() {
+    if (this.knowledgeTimer) {
+      clearInterval(this.knowledgeTimer);
+      this.knowledgeTimer = null;
+    }
+  },
+
+  async onShow() {
+    try {
+      // 优先显示缓存的等级信息
+      this.loadCachedLevel();
+      
+      // 确保定时器在页面显示时运行
+      this.startKnowledgeTimer();
+      
+      // 首先从缓存加载数据，确保用户立即看到内容
+      this.tryRecoverFromCache();
+      
+      // 强制刷新：每次 onShow 都加载最新数据
+      console.log('页面显示，开始加载最新数据');
+      await this.loadUserData();
+      
+      // 重置刷新标志
+      app.globalData.needRefreshHomePage = false;
+      
+      // 处理可能的新添加昆虫信息
+      if (app.globalData.newAddedInsect) {
+        app.globalData.newAddedInsect = null;
+      }
+    } catch (error) {
+      console.error('首页onShow执行失败，尝试恢复基本显示:', error);
+      // 确保至少能显示基本页面结构
+      this.tryRecoverFromCache();
+    }
+  },
+  
+  // 尝试从缓存恢复数据 - 增强版
+  tryRecoverFromCache() {
+    try {
+      // 初始化基础数据，确保页面至少能显示基本结构
+      const baseData = {
+        recentInsects: [],
+        collectedCount: 0,
+        totalCount: 30,
+        progressPercent: 0,
+        currentPage: 1,
+        hasMoreData: true
+      };
+      
+      // 尝试获取缓存数据
+      let cachedInsects, cachedCount, cachedTotal;
+      try {
+        cachedInsects = wx.getStorageSync('recent_insects') || [];
+        cachedCount = wx.getStorageSync('collectedCount') || 0;
+        cachedTotal = wx.getStorageSync('totalCount') || 30;
+      } catch (storageError) {
+        console.error('缓存读取失败，使用默认值:', storageError);
+        // 缓存读取失败时，使用空数组和默认值
+        cachedInsects = [];
+        cachedCount = 0;
+        cachedTotal = 30;
+      }
+      
+      // 确保缓存数据类型正确
+      if (!Array.isArray(cachedInsects)) {
+        console.error('缓存昆虫数据类型错误，重置为空数组');
+        cachedInsects = [];
+      }
+      
+      // 计算实际收集数量
+      const actualCount = cachedInsects.length;
+      
+      // 更新数据，确保页面显示
+      if (actualCount > 0) {
+        console.log('从缓存恢复数据，共', actualCount, '条记录');
+        this.setData({
+          ...baseData,
+          recentInsects: cachedInsects,
+          collectedCount: actualCount,
+          totalCount: cachedTotal,
+          progressPercent: actualCount && cachedTotal ? Math.max(1, Math.round((actualCount / cachedTotal) * 100)) : 0
+        });
+        
+        // 尝试更新用户等级，但不影响页面显示
+        try {
+          this.updateUserLevel(false);
+        } catch (levelError) {
+          console.error('更新用户等级时出错，但不影响数据显示:', levelError);
+        }
+      } else {
+        console.log('缓存数据为空，设置空状态');
+        // 显示空状态，确保页面结构正确
+        this.setData(baseData);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('tryRecoverFromCache严重错误，强制设置空状态:', error);
+      // 最后兜底，确保页面至少有基本结构
+      try {
+        this.setData({
+          recentInsects: [],
+          collectedCount: 0,
+          totalCount: 30,
+          progressPercent: 0,
+          currentPage: 1,
+          hasMoreData: true
+        });
+      } catch (setDataError) {
+        console.error('设置基础数据失败，页面可能无法正常显示:', setDataError);
+      }
+      return false;
+    }
+  },
+  
+  // 计算进度百分比
+  calculateProgress(collected, total) {
+    return collected && total > 0 ? Math.max(1, Math.round((collected / total) * 100)) : 0;
+  },
+  
+  onReady() {
     this.checkAndLoadMissingImages();
   },
 
-  // 加载用户数据
-  loadUserData: function() {
-    const db = wx.cloud.database();
-    const _ = db.command;
+  onHide() {
+    // 页面隐藏时清除定时器，避免内存泄漏
+    this.clearKnowledgeTimer();
+  },
+
+  onUnload() {
+    // 页面卸载时彻底清除定时器
+    this.clearKnowledgeTimer();
+  },
+  
+  // 加载更多数据
+  onLoadMore() {
+    console.log('触发加载更多');
+    if (this.data.hasMoreData) {
+      wx.showLoading({ title: '加载中...' });
+      this.loadUserData(true).finally(() => {
+        wx.hideLoading();
+      });
+    } else {
+      wx.showToast({ 
+        title: '没有更多数据了', 
+        icon: 'none'
+      });
+    }
+  },
+
+  /* ---------- 业务函数 ---------- */
+  async loadUserData(isLoadMore = false) {
+    console.log('首页昆虫收藏数据加载开始');
     
-    // 获取本地保存的昆虫发现次数缓存
-    const localFoundCountCache = wx.getStorageSync('insectFoundCountCache') || {};
-    
-    // 检查是否有openid
-    if (!app.globalData.openid) {
-      console.log('未获取到openid，尝试等待后重试');
-      // 如果未获取到openid，等待一段时间后重试
-      setTimeout(() => {
-        this.loadUserData();
-      }, 500);
+    // 防止重复加载
+    if (this._isLoading && !isLoadMore) {
+      console.log('数据加载中，跳过重复请求');
       return;
     }
     
-    console.log('开始加载用户数据，当前openid:', app.globalData.openid);
+    this._isLoading = true;
     
-    // 首先检查是否有本地缓存的数据可以使用
-    const cachedUserInsects = wx.getStorageSync('user_insects_list');
-    const cachedRecentInsects = wx.getStorageSync('recent_insects');
-    
-    // 获取用户发现的昆虫数量（去重后的）
-    // 使用基础查询方式替代group聚合，兼容更多环境
-    db.collection('user_insects')
-      .where({
-        _openid: app.globalData.openid
-      })
-      .field({
-        insectId: true
-      })
-      .get()
-      .then(res => {
-        console.log('获取用户昆虫记录成功，数量:', res.data.length);
-        
-        // 从数据中提取唯一的insectId并计算数量
-        const uniqueInsectIds = new Set();
-        res.data.forEach(item => {
-          uniqueInsectIds.add(item.insectId);
-        });
-        
-        const collectedCount = uniqueInsectIds.size;
-        this.setData({
-          collectedCount: collectedCount
-        });
-        
-        // 保存发现数量到本地缓存
-        wx.setStorageSync('collectedCount', collectedCount);
-        
-        // 获取昆虫总数
-        return db.collection('insects').count();
-      })
-      .then(res => {
-        const totalCount = res.total || 0;
-        this.setData({
-          totalCount: totalCount,
-          progressPercent: this.data.collectedCount > 0 ? 
-            Math.round((this.data.collectedCount / totalCount) * 100) : 0
-        });
-        
-        console.log('昆虫总数:', totalCount, '已收集:', this.data.collectedCount, '进度:', this.data.progressPercent + '%');
-        
-        // 获取最近发现的昆虫（最多10个）
-        return db.collection('user_insects')
-          .where({
-            _openid: app.globalData.openid
-          })
-          .orderBy('lastFoundTime', 'desc')
-          .limit(10)
+    try {
+      const db = wx.cloud.database();
+      const _ = db.command;
+      
+      // 确保openid存在，否则等待获取
+      if (!app.globalData.openid) {
+        console.log('openid未获取，等待并重试');
+        await new Promise(resolve => setTimeout(resolve, 300));
+        if (!app.globalData.openid) {
+          console.warn('openid仍未获取，使用缓存数据');
+          this.tryRecoverFromCache();
+          return;
+        }
+      }
+      
+      // 1. 获取昆虫总数
+      let totalCount = 30; // 默认值
+      try {
+        const totalRes = await db.collection('insects').count();
+        totalCount = totalRes.total || 30;
+      } catch (e) {
+        console.error('获取昆虫总数失败，使用默认值:', e);
+      }
+      
+      // 2. 获取用户昆虫记录
+      let recentRes = { data: [] };
+      try {
+        const skipCount = isLoadMore ? (this.data.currentPage - 1) * this.data.pageSize : 0;
+        recentRes = await db.collection('user_insects')
+          .where({ _openid: app.globalData.openid })
+          .orderBy('createdAt', 'desc')
+          .skip(skipCount)
+          .limit(this.data.pageSize)
           .get();
-      })
-      .then(res => {
-        if (res.data.length > 0) {
-          console.log('获取最近发现的昆虫成功，数量:', res.data.length);
-          
-          // 保存原始数据到本地缓存作为后备
-          wx.setStorageSync('user_insects_list', res.data);
-          // 增强去重逻辑 - 确保完全去重
-          const insectMap = new Map(); // 使用Map确保去重的严格性
-          
-          // 首先按昆虫ID分组，保留最新的记录
-          res.data.forEach(item => {
-            const existingItem = insectMap.get(item.insectId);
-            if (!existingItem || item.lastFoundTime > existingItem.lastFoundTime) {
-              insectMap.set(item.insectId, item);
-            }
+      } catch (e) {
+        console.error('获取用户昆虫记录失败:', e);
+        // 失败时使用缓存数据
+        this.tryRecoverFromCache();
+        return;
+      }
+      
+      const records = recentRes.data || [];
+      const hasMore = records.length >= this.data.pageSize;
+      
+      // 无数据时的处理
+      if (records.length === 0) {
+        this.setData({ 
+          recentInsects: isLoadMore ? this.data.recentInsects : [],
+          hasMoreData: false,
+          totalCount: totalCount,
+          collectedCount: isLoadMore ? this.data.collectedCount : 0,
+          progressPercent: 0
+        });
+        this.updateUserLevel();
+        return;
+      }
+      
+      // 3. 提取昆虫ID并去重
+      const insectIds = [...new Set(records.map(r => r.insectId).filter(id => id))];
+      
+      // 4. 获取昆虫详情
+      let insectDetails = {};
+      if (insectIds.length > 0) {
+        try {
+          const detailRes = await db.collection('insects')
+            .where({ _id: _.in(insectIds) })
+            .get();
+          detailRes.data.forEach(insect => {
+            insectDetails[insect._id] = insect;
           });
-          
-          // 重要修复：检查是否有从详情页传递过来的昆虫发现次数纠正数据
-          if (this.data.insectCorrectionData) {
-            const { insectId, correctFoundCount } = this.data.insectCorrectionData;
-            console.log(`发现需要纠正的昆虫数据: ID=${insectId}, 正确的发现次数=${correctFoundCount}`);
-            
-            // 遍历所有记录，找出需要纠正的昆虫
-            res.data.forEach(item => {
-              if (item.insectId === insectId || item.name === insectId) {
-                console.log(`找到需要纠正的昆虫记录: ${item.name}，原始发现次数=${item.foundCount}，纠正为=${correctFoundCount}`);
-                // 直接在源数据中修改发现次数
-                item.foundCount = correctFoundCount;
-                // 同时更新map中的记录
-                insectMap.set(item.insectId, item);
-              }
-            });
-            
-            // 纠正完成后清除临时数据，避免重复处理
-            this.setData({
-              insectCorrectionData: null
-            });
-          }
-          
-          // 然后再次检查是否有名称相同但ID不同的记录
-          const nameToIdMap = new Map();
-          const finalUniqueInsects = [];
-          
-          insectMap.forEach((item, insectId) => {
-            const normalizedName = item.name.trim(); // 标准化名称，去除空格
-            
-            if (!nameToIdMap.has(normalizedName)) {
-              nameToIdMap.set(normalizedName, insectId);
-              finalUniqueInsects.push(item);
-            } else {
-              // 如果有相同名称的昆虫，保留发现次数更多的
-              const existingId = nameToIdMap.get(normalizedName);
-              const existingItem = insectMap.get(existingId);
-              
-              if (item.foundCount > existingItem.foundCount) {
-                // 如果当前项发现次数更多，则替换
-                nameToIdMap.set(normalizedName, insectId);
-                // 找到已添加的索引并替换
-                const index = finalUniqueInsects.findIndex(i => i.insectId === existingId);
-                if (index !== -1) {
-                  finalUniqueInsects[index] = item;
-                }
-              }
-            }
-          });
+        } catch (e) {
+          console.error('获取昆虫详情失败:', e);
+        }
+      }
+      
+      // 5. 处理昆虫数据
+      const processedRecords = [];
+      const insectMap = new Map(); // 用于去重
+      
+      // 先添加已有数据（用于加载更多）
+      if (isLoadMore && this.data.recentInsects && this.data.recentInsects.length > 0) {
+        this.data.recentInsects.forEach(insect => {
+          insectMap.set(insect.id, insect);
+        });
+      }
+      
+      // 处理新记录
+      records.forEach(item => {
+        const insectId = item.insectId;
+        if (!insectId) return;
         
-        const uniqueInsects = finalUniqueInsects;
-        const insectIds = uniqueInsects.map(item => item.insectId);
+        const detail = insectDetails[insectId] || {};
+        const createdAt = item.createdAt || new Date().toISOString();
+        const isNew = Date.now() - new Date(createdAt).getTime() < 24 * 3600 * 1000;
+        const name = item.name || detail.name || '未知昆虫';
         
-        // 获取昆虫详细信息
-        return db.collection('insects').where({
-          _id: _.in(insectIds)
-        }).get().then(insectRes => {
-          // 合并数据
-          const recentInsects = uniqueInsects.map(userInsect => {
-            const insectInfo = insectRes.data.find(i => i._id === userInsect.insectId) || {};
-            
-            // 使用本地缓存的发现次数
-            let foundCount = userInsect.foundCount;
-            const insectId = userInsect.insectId;
-            const insectName = userInsect.name;
-            
-            // 检查是否有本地缓存的发现次数
-            if (localFoundCountCache[insectId]) {
-              console.log(`从本地缓存恢复发现次数: ${insectName}，缓存次数=${localFoundCountCache[insectId]}，云端次数=${foundCount}`);
-              foundCount = localFoundCountCache[insectId];
-            } else if (localFoundCountCache[insectName]) {
-              console.log(`从本地缓存恢复发现次数(按名称): ${insectName}，缓存次数=${localFoundCountCache[insectName]}，云端次数=${foundCount}`);
-              foundCount = localFoundCountCache[insectName];
-            }
-            
-            // 增强图片获取逻辑，确保所有昆虫都能显示图片
-            let imageUrl = insectInfo.imageUrl || '';
-            if (!imageUrl) {
-              // 首先检查是否有预设的图片URL - 完整的昆虫图片映射表
-              const insectImageUrls = {
-                '眼斑螳螂': 'https://img.alicdn.com/imgextra/i4/O1CN01aZxGmz1e0XyF5YjH3_!!6000000003688-0-lubanu.jpg',
-                '步甲幼虫': 'https://t7.baidu.com/it/u=110131899,2058617435&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=375',
-                '地鳖': 'https://t7.baidu.com/it/u=4221003161,3077827695&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=300',
-                '蝴蝶': 'https://t7.baidu.com/it/u=1935592311,2578343870&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=313',
-                '蜜蜂': 'https://t7.baidu.com/it/u=1464345686,3372357833&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '蚂蚁': 'https://t7.baidu.com/it/u=248068639,3395915469&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '蜻蜓': 'https://t7.baidu.com/it/u=1029684111,3681641525&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '变色树蜥': 'https://t7.baidu.com/it/u=2510668569,1048315846&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=375',
-                '牡丹鹦鹉': 'https://t7.baidu.com/it/u=3106284192,2244210758&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '幽灵螳螂': 'https://img.alicdn.com/imgextra/i3/O1CN0189y3p21wYd9Z3eZfF_!!6000000006304-0-lubanu.jpg',
-                '蓝舌石龙子': 'https://t7.baidu.com/it/u=3492912072,1938507263&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '中华大扁锹': 'https://t7.baidu.com/it/u=3844553548,4158186390&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '蓝孔雀': 'https://t7.baidu.com/it/u=3147262123,3512128692&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '姬兜': 'https://img.alicdn.com/imgextra/i4/O1CN01h1r3F51lB1nYl1e0X_!!6000000003687-0-lubanu.jpg',
-                '苏里南潜螈': 'https://t7.baidu.com/it/u=2972312196,4043054125&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=375',
-                '锹甲': 'https://t7.baidu.com/it/u=684608629,1384084554&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '独角仙': 'https://t7.baidu.com/it/u=3232388974,4185695270&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '金龟子': 'https://t7.baidu.com/it/u=63005150,4268008290&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '七星瓢虫': 'https://t7.baidu.com/it/u=2212768863,2819402725&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=375',
-                '竹节虫': 'https://t7.baidu.com/it/u=2196846743,1424808283&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '大刀螳螂': 'https://t7.baidu.com/it/u=419223625,4051093778&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333',
-                '蓝闪蝶': 'https://t7.baidu.com/it/u=2930998125,3192395985&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=333'
-              };
-              
-              // 尝试使用预设的图片URL - 不区分大小写
-              const insectNameLower = userInsect.name.toLowerCase();
-              let found = false;
-              for (const [key, value] of Object.entries(insectImageUrls)) {
-                if (key.toLowerCase() === insectNameLower) {
-                  imageUrl = value;
-                  found = true;
-                  break;
-                }
-              }
-              
-              if (!found) {
-                // 最后使用本地默认图片
-                imageUrl = '/images/default_insect.png';
-              }
-            }
-            
-            // 判断是否为新发现的昆虫（24小时内）
-            const now = new Date().getTime();
-            const lastFoundTime = userInsect.lastFoundTime ? new Date(userInsect.lastFoundTime).getTime() : 0;
-            const isNew = now - lastFoundTime < 24 * 60 * 60 * 1000; // 24小时内的视为新发现
-            
-            return {
-              id: userInsect.insectId,
-              name: userInsect.name,
-              foundCount: foundCount,
-              imageUrl: imageUrl,
-              lastFoundTime: userInsect.lastFoundTime,
-              isNew: isNew
-            };
-          });
-          
-          // 保存最终的昆虫数据到本地缓存
-          wx.setStorageSync('recent_insects', recentInsects);
-          
-          this.setData({
-            recentInsects: recentInsects
-          });
-          // 更新用户等级信息
-          this.updateUserLevel();
-        });
-      } else {
-        this.setData({
-          recentInsects: []
-        });
-      }
-    }).catch(err => {
-      console.error('加载数据失败:', err);
-      
-      // 尝试使用本地缓存数据作为后备
-      const cachedUserInsects = wx.getStorageSync('user_insects_list') || [];
-      const cachedRecentInsects = wx.getStorageSync('recent_insects') || [];
-      const cachedCollectedCount = wx.getStorageSync('collectedCount') || 0;
-      
-      if (cachedRecentInsects.length > 0) {
-        console.log('使用本地缓存数据作为后备，数量:', cachedRecentInsects.length);
-        this.setData({
-          recentInsects: cachedRecentInsects,
-          collectedCount: cachedCollectedCount
-        });
-      } else {
-        wx.showToast({
-          title: '加载失败，请检查网络连接',
-          icon: 'none'
-        });
-      }
-      
-      // 即使出错也更新等级信息
-      this.updateUserLevel();
-    });
-  },
-
-  // 跳转到拍照页面
-  goToCamera: function() {
-    wx.switchTab({
-      url: '/pages/camera/camera'
-    });
-  },
-  
-  // 跳转到徽章详情页面
-  goToBadges: function() {
-    wx.navigateTo({
-      url: '/pages/badges/badges'
-    });
-  },
-  
-  // 更新用户等级信息
-  updateUserLevel: function() {
-    // 等级规则：临时设定的等级门槛
-    // Lv.1 昆虫萌新: 1种
-    // Lv.2 昆虫探索者: 5种
-    // Lv.5 好奇观察者: 15种
-    // Lv.15 田野侦探: 30种
-    // Lv.30 昆虫爱好者: 50种
-    const collectedCount = this.data.collectedCount;
-    let level = 1;
-    let name = '昆虫萌新';
-    let icon = '/images/icons/bug1.svg';
-    let progress = '1/15';
-    let nextLevelCount = 15;
-    
-    if (collectedCount >= 15) {
-      level = 5;
-      name = '好奇观察者';
-      icon = '/images/icons/bug2.svg';
-      progress = '15/15';
-      nextLevelCount = 30;
-    } else if (collectedCount >= 5) {
-      level = 2;
-      name = '昆虫探索者';
-      icon = '/images/icons/bug1.svg';
-      progress = `${collectedCount}/15`;
-    } else if (collectedCount > 1) {
-      level = 2;
-      name = '昆虫探索者';
-      icon = '/images/icons/bug1.svg';
-      progress = `${collectedCount}/15`;
-    }
-    
-    // 如果已经达到更高等级
-    if (collectedCount >= 30) {
-      level = 15;
-      name = '田野侦探';
-      icon = '/images/icons/bug3.svg';
-      progress = '30/30';
-      nextLevelCount = 50;
-    }
-    
-    if (collectedCount >= 50) {
-      level = 30;
-      name = '昆虫爱好者';
-      icon = '/images/icons/bug4.svg';
-      progress = '50/50';
-      nextLevelCount = 50; // 最高等级
-    }
-    
-    // 更新等级信息，为后续调整预留空间
-    this.setData({
-      currentBadge: {
-        level,
-        name,
-        icon,
-        progress: collectedCount >= nextLevelCount ? `${collectedCount}/${collectedCount}` : `${collectedCount}/${nextLevelCount}`
-      }
-    });
-  },
-
-  // 增强的图片加载失败处理
-  onImageError: function(e) {
-    console.log('昆虫图片加载失败:', e);
-    const index = e.currentTarget.dataset.index;
-    const recentInsects = this.data.recentInsects;
-    
-    if (recentInsects && recentInsects[index]) {
-      const insectName = recentInsects[index].name;
-      const currentImageUrl = recentInsects[index].imageUrl;
-      const defaultImageUrl = '/images/empty_insect.png'; // 使用灰态LOGO作为默认图
-      
-      // 创建副本以避免直接修改原数据
-      const updatedInsects = [...recentInsects];
-      
-      // 首先尝试使用本地默认图片
-      if (currentImageUrl !== defaultImageUrl) {
-        console.log(`为昆虫 ${insectName} (索引: ${index}) 设置灰态LOGO`);
-        updatedInsects[index] = {
-          ...updatedInsects[index],
-          imageUrl: defaultImageUrl,
-          imageLoadStatus: 'default'
+        // 构建昆虫数据对象
+        const insectData = {
+          id: insectId,
+          name: name,
+          foundCount: item.foundCount || 1,
+          imageUrl: item.userImageUrl || detail.userImageUrl || '/images/empty_insect.png',
+          userImageUrl: item.userImageUrl || detail.userImageUrl || '',
+          lastFoundTime: createdAt,
+          isNew: isNew,
+          _id: item._id
         };
         
-        this.setData({
-          recentInsects: updatedInsects
-        });
+        // 去重逻辑：只保留最新的记录
+        if (!insectMap.has(insectId) || 
+            new Date(createdAt).getTime() > new Date(insectMap.get(insectId).lastFoundTime).getTime()) {
+          insectMap.set(insectId, insectData);
+        }
+      });
+      
+      // 转换为数组并排序
+      const sortedInsects = Array.from(insectMap.values()).sort((a, b) => {
+        return new Date(b.lastFoundTime).getTime() - new Date(a.lastFoundTime).getTime();
+      });
+      
+      // 限制数量（分页）
+      const displayInsects = isLoadMore ? sortedInsects : sortedInsects.slice(0, this.data.pageSize);
+      const collectedCount = sortedInsects.length;
+      const progressPercent = collectedCount && totalCount ? 
+        Math.max(1, Math.round((collectedCount / totalCount) * 100)) : 0;
+      
+      // 更新页面数据
+      this.setData({
+        recentInsects: displayInsects,
+        collectedCount: collectedCount,
+        totalCount: totalCount,
+        progressPercent: progressPercent,
+        currentPage: isLoadMore ? this.data.currentPage + 1 : 1,
+        hasMoreData: hasMore
+      });
+      
+      // 保存到缓存
+      try {
+        wx.setStorageSync('recent_insects', sortedInsects);
+        wx.setStorageSync('collectedCount', collectedCount);
+        wx.setStorageSync('totalCount', totalCount);
+      } catch (e) {
+        console.error('缓存保存失败:', e);
       }
       
-      // 同时在后台尝试重新获取图片信息，提高用户体验
-      this.tryToReloadImage(insectName, index);
+      // 更新用户等级
+      this.updateUserLevel(true).catch(e => {
+        console.error('更新等级失败但不影响显示:', e);
+      });
+      
+      console.log('首页数据加载成功，共', collectedCount, '种昆虫');
+      
+    } catch (error) {
+      console.error('loadUserData严重错误:', error);
+      // 发生错误时尝试恢复缓存数据
+      this.tryRecoverFromCache();
+    } finally {
+      this._isLoading = false;
+    }
+  },
+
+  // 从数据库加载用户等级配置
+  async loadUserLevelConfig() {
+    try {
+      console.log('===== 开始从数据库加载用户等级配置 =====');
+      
+      const result = await wx.cloud.callFunction({
+        name: 'getBadgeList',
+        data: { 
+          pageNum: 1, 
+          pageSize: 50 
+        }
+      });
+      
+      console.log('数据库用户等级配置加载结果:', result);
+      
+      if (result.result && result.result.success && result.result.badges.length > 0) {
+        const badges = result.result.badges;
+        
+        // 将数据库勋章配置转换为等级配置格式
+        const levelConfig = badges.map(badge => ({
+          level: badge.id || badge._id,
+          name: badge.name,
+          levelName: badge.level || '',
+          icon: badge.icon || '/images/icons/bug1.svg',
+          requiredCount: badge.requiredCount || 1,
+          badgeId: badge.id || badge._id
+        }));
+        
+        // 按所需数量排序
+        levelConfig.sort((a, b) => a.requiredCount - b.requiredCount);
+        
+        // 缓存配置
+        const cacheData = {
+          levelConfig: levelConfig,
+          timestamp: Date.now()
+        };
+        
+        wx.setStorageSync('cached_level_config', cacheData);
+        
+        console.log('成功从数据库加载用户等级配置:', levelConfig.length + '个等级');
+        return levelConfig;
+      } else {
+        console.log('数据库中没有用户等级配置，使用默认配置');
+        return this.getDefaultLevelConfig();
+      }
+    } catch (error) {
+      console.error('从数据库加载用户等级配置失败:', error);
+      return this.getDefaultLevelConfig();
     }
   },
   
-  // 尝试重新加载图片信息
-  tryToReloadImage: function(insectName, index) {
-    console.log(`尝试为昆虫 ${insectName} 重新加载图片信息`);
+  // 获取默认等级配置（备用方案）
+  getDefaultLevelConfig() {
+    return [
+      { level: 1, name: '昆虫萌新', levelName: '入门', icon: '/images/icons/bug1.svg', requiredCount: 1, badgeId: 'default_1' },
+      { level: 2, name: '昆虫探索者', levelName: '初级', icon: '/images/icons/bug1.svg', requiredCount: 5, badgeId: 'default_2' },
+      { level: 3, name: '好奇观察者', levelName: '中级', icon: '/images/icons/bug2.svg', requiredCount: 15, badgeId: 'default_3' },
+      { level: 4, name: '田野侦探', levelName: '高级', icon: '/images/icons/bug3.svg', requiredCount: 30, badgeId: 'default_4' },
+      { level: 5, name: '昆虫爱好者', levelName: '专家', icon: '/images/icons/bug4.svg', requiredCount: 50, badgeId: 'default_5' }
+    ];
+  },
+  
+  updateUserLevel(shouldCache = false) {
+    // 优先从缓存加载等级配置
+    const cachedConfig = wx.getStorageSync('cached_level_config');
+    let levelConfig;
     
-    // 1. 从本地预设的图片URL映射表中查找备用图片
-    const insectImageUrls = {
-      '眼斑螳螂': 'https://img.alicdn.com/imgextra/i4/O1CN01aZxGmz1e0XyF5YjH3_!!6000000003688-0-lubanu.jpg',
-      '红珠凤蝶蛹': 'https://t7.baidu.com/it/u=228423286,3138567427&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=375',
-      '步甲幼虫': 'https://img.alicdn.com/imgextra/i3/O1CN01rO2WdQ1X5H9vZJXo0_!!6000000002730-0-lubanu.jpg',
-      '地鳖': 'https://img.alicdn.com/imgextra/i2/O1CN019hN6hQ1F7O9gG2y5Q_!!6000000000556-0-lubanu.jpg',
-      '蝴蝶': 'https://img.alicdn.com/imgextra/i2/O1CN01h7C1nL1f6Q3V2p4Ov_!!6000000003927-0-lubanu.jpg',
-      '蜜蜂': 'https://img.alicdn.com/imgextra/i1/O1CN01z2tQ9t1bZg6fE5L3C_!!6000000003886-0-lubanu.jpg',
-      '蚂蚁': 'https://img.alicdn.com/imgextra/i2/O1CN01KzO8nD1NQ4W7MfX4Y_!!6000000001886-0-lubanu.jpg',
-      '蜻蜓': 'https://img.alicdn.com/imgextra/i1/O1CN01M0CXuq1nJZ0Fd0o95_!!6000000005314-0-lubanu.jpg',
-      '变色树蜥': 'https://img.alicdn.com/imgextra/i4/O1CN01pJzrB61kPv7K1fXlE_!!6000000004453-0-lubanu.jpg',
-      '牡丹鹦鹉': 'https://img.alicdn.com/imgextra/i3/O1CN01Qx6JnX1nXn8Q3S42y_!!6000000005175-0-lubanu.jpg',
-      '幽灵螳螂': 'https://img.alicdn.com/imgextra/i3/O1CN0189y3p21wYd9Z3eZfF_!!6000000006304-0-lubanu.jpg',
-      '蓝舌石龙子': 'https://img.alicdn.com/imgextra/i3/O1CN01fSg40P1iT3WtX7n35_!!6000000004345-0-lubanu.jpg',
-      '中华大扁锹': 'https://img.alicdn.com/imgextra/i3/O1CN01Z1J3l91P2P2g8JwXg_!!6000000000601-0-lubanu.jpg',
-      '蓝孔雀': 'https://img.alicdn.com/imgextra/i4/O1CN01lB1nYl1e0XyD8jC6r_!!6000000003689-0-lubanu.jpg',
-      '姬兜': 'https://img.alicdn.com/imgextra/i4/O1CN01h1r3F51lB1nYl1e0X_!!6000000003687-0-lubanu.jpg',
-      '苏里南潜螈': 'https://img.alicdn.com/imgextra/i1/O1CN01zV0lXo1pUq8g4jFmE_!!6000000005502-0-lubanu.jpg',
-      '锹甲': 'https://img.alicdn.com/imgextra/i2/O1CN01H2M1Wz1Q1d1m5n1p2_!!6000000001204-0-lubanu.jpg',
-      '独角仙': 'https://img.alicdn.com/imgextra/i4/O1CN01BjW1gQ1zRQ8KZ0gHc_!!6000000006779-0-lubanu.jpg',
-      '金龟子': 'https://img.alicdn.com/imgextra/i1/O1CN01jO4I5s1zZ9Q9k3e7N_!!6000000006362-0-lubanu.jpg',
-      '七星瓢虫': 'https://img.alicdn.com/imgextra/i3/O1CN01YxqKbE1zK0I1W0Y0J_!!6000000006780-0-lubanu.jpg',
-      '竹节虫': 'https://img.alicdn.com/imgextra/i4/O1CN01tLk27p1tN9KQ7V0yq_!!6000000005940-0-lubanu.jpg',
-      '大刀螳螂': 'https://img.alicdn.com/imgextra/i1/O1CN01JkXy8S1rE7H1vL1p9_!!6000000005911-0-lubanu.jpg',
-      '蓝闪蝶': 'https://img.alicdn.com/imgextra/i1/O1CN01rUQ6uI1rPZ1K5o5fZ_!!6000000005029-0-lubanu.jpg'
-    };
+    if (cachedConfig && Date.now() - cachedConfig.timestamp < 24 * 60 * 60 * 1000) { // 24小时内使用缓存
+      levelConfig = cachedConfig.levelConfig;
+      console.log('使用缓存的等级配置');
+    } else {
+      // 缓存过期或不存在，异步加载最新配置
+      this.loadUserLevelConfig().then(config => {
+        // 确保在异步加载配置完成后能正确更新UI
+        this.setData({ levelConfig: config }, () => {
+          this.updateUserLevelWithConfig(this.data.collectedCount, config, shouldCache);
+        });
+      });
+      levelConfig = this.getDefaultLevelConfig(); // 使用默认配置，避免UI空白
+      console.log('使用默认等级配置，后台加载最新配置');
+    }
     
-    // 检查是否有备用图片URL
-    const insectNameLower = insectName.toLowerCase();
-    let alternativeUrl = null;
+    // 立即使用当前可用的配置更新等级
+    this.updateUserLevelWithConfig(this.data.collectedCount, levelConfig, shouldCache);
+  },
+  
+  // 使用指定配置更新用户等级
+  updateUserLevelWithConfig(collectedCount, levelConfig, shouldCache = false) {
+    const c = collectedCount;
+    console.log(`updateUserLevelWithConfig - 当前收藏数量: ${c}, 配置数量: ${levelConfig.length}`);
     
-    for (const [key, value] of Object.entries(insectImageUrls)) {
-      if (key.toLowerCase() === insectNameLower) {
-        alternativeUrl = value;
+    // 找到用户当前等级
+    let currentLevel = levelConfig[0] || { level: 1, name: '昆虫萌新', icon: '/images/icons/bug1.svg', requiredCount: 1 };
+    let nextLevel = null;
+    
+    for (let i = 0; i < levelConfig.length; i++) {
+      const level = levelConfig[i];
+      if (c >= level.requiredCount) {
+        currentLevel = level;
+      } else if (!nextLevel) {
+        nextLevel = level;
         break;
       }
     }
     
-    // 如果有备用URL，尝试先验证其有效性
-    if (alternativeUrl) {
-      // 延迟验证，避免阻塞主线程
-      setTimeout(() => {
-        this.validateImageUrl(alternativeUrl, (isValid) => {
-          if (isValid) {
-            console.log(`验证成功，昆虫 ${insectName} 有有效的备用图片URL`);
-            
-            // 更新图片URL
-            const recentInsects = this.data.recentInsects;
-            if (recentInsects && recentInsects[index]) {
-              const updatedInsects = [...recentInsects];
-              updatedInsects[index] = {
-                ...updatedInsects[index],
-                imageUrl: alternativeUrl,
-                imageLoadStatus: 'success'
-              };
-              
-              this.setData({
-                recentInsects: updatedInsects
-              });
-            }
-          }
-        });
-      }, 1000);
+    // 如果没有找到下一个等级，设置一个默认的下一个目标
+    if (!nextLevel) {
+      nextLevel = { requiredCount: c + 1 };
     }
     
-    // 同时从数据库获取最新图片信息，作为第二道保障
-    this.fetchImageFromDatabase(insectName, index);
-  },
-  
-  // 验证图片URL是否有效
-  validateImageUrl: function(url, callback) {
-    // 创建一个临时的图片对象来验证URL
-    const img = new Image();
-    let timeout = null;
+    // 计算显示的等级数字（在配置数组中的索引+1）
+    const displayLevel = levelConfig.indexOf(currentLevel) + 1;
     
-    img.onload = function() {
-      clearTimeout(timeout);
-      callback(true);
+    const newBadge = { 
+      level: displayLevel, 
+      name: currentLevel.name,
+      levelName: currentLevel.levelName || '',
+      icon: currentLevel.icon, 
+      progress: `${c}/${nextLevel.requiredCount}`,
+      badgeId: currentLevel.badgeId
     };
     
-    img.onerror = function() {
-      clearTimeout(timeout);
-      callback(false);
-    };
+    console.log(`新等级信息: ${JSON.stringify(newBadge)}`);
     
-    // 设置超时，避免长时间等待
-    timeout = setTimeout(function() {
-      callback(false);
-    }, 3000);
+    // 强制更新UI，确保进度显示正确同步
+    this.setData({
+      currentBadge: newBadge
+    });
     
-    img.src = url;
+    // 缓存等级信息
+    if (shouldCache) {
+      try {
+        wx.setStorageSync('cached_user_level', newBadge);
+        console.log('等级信息已缓存');
+      } catch (e) {
+        console.error('缓存等级信息失败:', e);
+      }
+    }
+    
+    // 确保进度百分比也同步更新
+    if (this.data.totalCount > 0) {
+      const progressPercent = Math.max(1, Math.round((c / this.data.totalCount) * 100));
+      if (progressPercent !== this.data.progressPercent) {
+        this.setData({ progressPercent });
+        console.log(`进度百分比已更新: ${progressPercent}%`);
+      }
+    }
   },
-  
-  // 从数据库获取最新图片信息
-  fetchImageFromDatabase: function(insectName, index) {
-    const db = wx.cloud.database();
+
+  async checkAndLoadMissingImages() {
+    // 限制图片修复的频率，避免过于频繁的请求
+    const now = Date.now();
+    if (this._lastChecked && now - this._lastChecked < 60000) return; // 1分钟内不重复检查
+    this._lastChecked = now;
     
-    // 查找昆虫信息
-    db.collection('insects')
-      .where({
-        name: insectName
-      })
-      .get()
-      .then(res => {
-        if (res.data && res.data.length > 0) {
-          const insectInfo = res.data[0];
-          if (insectInfo.imageUrl) {
-            console.log(`从数据库获取到昆虫 ${insectName} 的图片URL`);
-            
-            // 验证从数据库获取的URL
-            this.validateImageUrl(insectInfo.imageUrl, (isValid) => {
-              if (isValid) {
-                const recentInsects = this.data.recentInsects;
-                if (recentInsects && recentInsects[index]) {
-                  const updatedInsects = [...recentInsects];
-                  updatedInsects[index] = {
-                    ...updatedInsects[index],
-                    imageUrl: insectInfo.imageUrl,
-                    imageLoadStatus: 'success'
-                  };
-                  
-                  this.setData({
-                    recentInsects: updatedInsects
-                  });
-                }
-              }
-            });
+    const list = this.data.recentInsects;
+    if (!list || list.length === 0) return;
+    
+    // 找出所有需要修复图片的昆虫，但限制数量
+    const needFix = list.filter(v => !v.imageUrl || v.imageUrl.includes('default')).slice(0, 3); // 一次最多修复3个
+    
+    if (needFix.length === 0) return;
+    
+    const tasks = needFix.map(async item => {
+      try {
+        item.imageUrl = await getBaiduImageUrl(item.name, { source: 'home_fix', requestId: `fix_${Date.now()}` });
+      } catch (err) {
+        item.imageUrl = '/images/empty_insect.png';
+      }
+    });
+    
+    if (tasks.length) {
+      await Promise.all(tasks);
+      this.setData({ recentInsects: list });
+      wx.setStorageSync('recent_insects', list);
+    }
+  },
+
+  onImageError(e) {
+    const idx = e.currentTarget.dataset.index;
+    const list = [...this.data.recentInsects];
+    const item = list[idx];
+    
+    // 检查是否已经尝试过重试，避免无限重试
+    if (item.imageRetryCount && item.imageRetryCount >= 1) {
+      console.log(`已尝试过重试，不再重试: ${item.name}`);
+      return;
+    }
+    
+    // 图片加载失败时，立即使用灰态的小程序LOGO避免空白显示
+    console.log(`图片加载失败，使用默认图片: ${item.name}`);
+    list[idx].imageUrl = '/images/empty_insect.png';
+    list[idx].imageRetryCount = (list[idx].imageRetryCount || 0) + 1;
+    this.setData({ recentInsects: list });
+    
+    // 异步尝试重新获取图片，但不立即更新UI，避免闪烁
+    const retryGetImage = async () => {
+      try {
+        // 为避免频繁请求，添加固定延迟
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        const newImageUrl = await getBaiduImageUrl(item.name, { source: 'home_retry', requestId: `retry_${Date.now()}` });
+        // 检查是否仍是同一个item在同一个位置
+        if (this.data.recentInsects[idx] && this.data.recentInsects[idx].id === item.id) {
+          // 只有获取到有效的图片URL才更新，避免覆盖已显示的默认图片
+          if (newImageUrl && !newImageUrl.includes('empty')) {
+            list[idx].imageUrl = newImageUrl;
+            this.setData({ recentInsects: list });
+            wx.setStorageSync('recent_insects', list);
           }
         }
-      })
-      .catch(err => {
-        console.error(`从数据库获取昆虫 ${insectName} 图片信息失败:`, err);
-      });
+      } catch (err) {
+        console.error(`重试获取图片失败: ${item.name}`, err);
+        // 静默失败，保持使用默认图片
+      }
+    };
+    
+    // 异步执行，不阻塞UI
+    retryGetImage();
+  },
+
+  goToInsectDetail(e) {
+    const id = e.currentTarget.dataset.id;
+    const index = e.currentTarget.dataset.index;
+    const item = this.data.recentInsects[index];
+    const userImg = item.userImageUrl || item.imageUrl || '';   // 用户上传图
+    
+    // 优先使用externalId进行导航，如果有externalId的话
+    const navigationId = item.externalId ? `externalId=${item.externalId}` : `id=${id}`;
+    wx.navigateTo({ url: `/subpages/insect-detail/insect-detail?${navigationId}&userImage=${encodeURIComponent(userImg)}` });
+  },
+
+  async onInsectLongPress(e) {
+    const id = e.currentTarget.dataset.id;
+    const index = e.currentTarget.dataset.index;
+    const item = this.data.recentInsects[index];
+    
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要永久删除"${item.name}"的记录吗？此操作无法撤销。`,
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '删除中' });
+            
+            // 调用云函数执行硬删除
+            const result = await wx.cloud.callFunction({
+              name: 'markFound',
+              data: {
+                action: 'delete',
+                insectId: id,
+                // 添加用户openid以确保删除操作的正确性
+                _openid: wx.getStorageSync('openid')
+              }
+            });
+            
+            if (result.result.success) {
+              wx.hideLoading();
+              
+              // 1. 立即从列表中移除删除的昆虫
+              const updatedInsects = this.data.recentInsects.filter((_, i) => i !== index);
+              
+              // 2. 立即更新收集数量和进度百分比
+              const updatedCount = Math.max(0, this.data.collectedCount - 1);
+              const updatedProgress = this.calculateProgress(updatedCount, this.data.totalCount);
+              
+              // 3. 更新UI显示 - 使用回调函数确保UI更新完成后再显示toast
+              this.setData({
+                recentInsects: updatedInsects,
+                collectedCount: updatedCount,
+                progressPercent: updatedProgress
+              }, () => {
+                // 4. 更新等级勋章
+                this.updateUserLevel(true);
+                
+                // 5. 清除所有相关缓存
+                wx.removeStorageSync('recent_insects');
+                wx.removeStorageSync('collectedCount');
+                wx.removeStorageSync('cached_user_level');
+                
+                // 6. 重新加载完整数据以确保准确性
+                this.loadUserData();
+                
+                // 7. 显示删除成功提示
+                wx.showToast({ title: '删除成功' });
+              });
+              
+              // 8. 设置全局刷新标志
+              getApp().globalData.needRefreshHomePage = true;
+              
+            } else {
+              wx.hideLoading();
+              wx.showToast({ 
+                title: result.result.message || '删除失败', 
+                icon: 'none' 
+              });
+            }
+          } catch (error) {
+            wx.hideLoading();
+            wx.showToast({ 
+              title: '删除失败，请重试', 
+              icon: 'none' 
+            });
+            console.error('删除昆虫记录失败:', error);
+          }
+        }
+      }
+    });
+  },
+
+  goToCamera() {
+    wx.switchTab({ url: '/pages/camera/camera' });
+  },
+
+  goToLevelDetail() {
+    wx.navigateTo({ url: '/subpages/badges/badges' });
+  },
+
+
+
+  onPullDownRefresh() {
+    console.log('下拉刷新触发');
+    
+    // 强制清除缓存，确保加载最新数据
+    this.clearAllCache();
+    
+    // 加载最新数据
+    this.loadUserData().finally(() => {
+      // 无论加载成功与否，都停止下拉刷新动画
+      wx.stopPullDownRefresh();
+      console.log('下拉刷新完成');
+    });
   },
   
-  // 跳转到昆虫详情页 - 增加传递图片URL参数
-      goToInsectDetail: function(e) {
-        const insectId = e.currentTarget.dataset.id;
-        const index = e.currentTarget.dataset.index;
-        const recentInsects = this.data.recentInsects;
-    
-    // 尝试获取昆虫的图片URL
-    let imageUrl = '';
-    if (recentInsects && recentInsects[index]) {
-      imageUrl = recentInsects[index].imageUrl || '';
+  // 清除所有相关缓存
+  clearAllCache() {
+    try {
+      wx.removeStorageSync('recent_insects');
+      wx.removeStorageSync('collectedCount');
+      wx.removeStorageSync('cached_user_level');
+      wx.removeStorageSync('cached_cold_knowledge');
+      console.log('已清除所有相关缓存');
+    } catch (e) {
+      console.error('清除缓存失败:', e);
     }
-    
-    // 构建带图片URL的跳转参数
-    let url = `/pages/insect-detail/insect-detail?id=${insectId}`;
-    if (imageUrl) {
-      url += `&imageUrl=${encodeURIComponent(imageUrl)}`;
+  },
+  // 检查管理员权限
+  async checkAdminPermission() {
+    try {
+      const result = await wx.cloud.callFunction({
+        name: 'checkAdminPermission',
+        data: {}
+      });
+      
+      if (result.result && result.result.success) {
+        const isAdmin = result.result.isAdmin;
+        
+            // 只设置管理员相关状态
+        this.setData({
+          isAdmin: isAdmin,
+          showAdminEntrance: isAdmin, // 仅当是管理员时显示入口
+          isLoadingAdminCheck: false
+        });
+      } else {
+        this.setData({
+          isAdmin: false,
+          showAdminEntrance: false,
+          isLoadingAdminCheck: false
+        });
+      }
+    } catch (error) {
+      this.setData({
+        isAdmin: false,
+        showAdminEntrance: false,
+        showAdminToolsEntrance: false,
+        isLoadingAdminCheck: false
+      });
+    }
+  },
+  
+  // 跳转到管理后台
+  goToAdmin() {
+    if (!this.data.isAdmin) {
+      wx.showToast({
+        title: '权限不足',
+        icon: 'none'
+      });
+      return;
     }
     
     wx.navigateTo({
-      url: url
+      url: '/pages/admin/index'
     });
-  },
-
-  // 下拉刷新
-  onPullDownRefresh: function() {
-    this.loadUserData();
-    setTimeout(() => {
-      wx.stopPullDownRefresh();
-    }, 1000);
   },
   
-  // 页面初次渲染完成
-  onReady: function() {
-    // 页面渲染完成后，触发图片自动补齐功能
-    this.checkAndLoadMissingImages();
-  },
 
-  // 处理昆虫记录长按事件，实现删除功能
-  onInsectLongPress: function(e) {
-    const insectId = e.currentTarget.dataset.id;
-    const insectName = e.currentTarget.dataset.name;
-    const index = e.currentTarget.dataset.index;
-    
-    console.log(`长按昆虫记录: ${insectName}, ID: ${insectId}`);
-    
-    // 显示二次确认对话框
-    wx.showModal({
-      title: '删除确认',
-      content: `确定要删除"${insectName}"的记录吗？删除后不可恢复。`,
-      success: (res) => {
-        if (res.confirm) {
-          console.log(`用户确认删除昆虫: ${insectName}, ID: ${insectId}`);
-          
-          // 调用云函数删除用户昆虫记录
-          wx.cloud.callFunction({
-            name: 'markFound',
-            data: {
-              name: insectName,
-              action: 'delete',
-              insectId: insectId
-            },
-            success: (res) => {
-              console.log(`删除昆虫记录成功: ${insectName}`, res);
-              
-              // 从本地数据中移除该记录
-              const updatedInsects = this.data.recentInsects.filter((_, i) => i !== index);
-              this.setData({
-                recentInsects: updatedInsects
-              });
-              
-              // 重要修复：删除成功后彻底清除对应的本地缓存，防止记录重新出现和发现次数错误
-          // 1. 清除发现次数缓存
-          const localFoundCountCache = wx.getStorageSync('insectFoundCountCache') || {};
-          // 彻底删除所有可能的缓存键（按ID和名称）
-          delete localFoundCountCache[insectId];
-          delete localFoundCountCache[insectName];
-          // 额外的保护：清除所有与该昆虫名称相关的缓存键
-          Object.keys(localFoundCountCache).forEach(key => {
-            if (key.includes(insectName)) {
-              delete localFoundCountCache[key];
-            }
-          });
-          wx.setStorageSync('insectFoundCountCache', localFoundCountCache);
-          console.log(`已彻底清除昆虫 ${insectName} 的本地发现次数缓存`);
-          
-          // 2. 清除详情页的完整缓存（多种可能的缓存键格式）
-          const detailCacheKey = `insect_detail_${insectId}`;
-          wx.removeStorageSync(detailCacheKey);
-          console.log(`已清除昆虫 ${insectName} 的详情页缓存(ID格式)`);
-          
-          // 3. 清除按名称缓存的详情页数据
-          const nameCacheKey = `insect_detail_${insectName}`;
-          wx.removeStorageSync(nameCacheKey);
-          console.log(`已清除昆虫 ${insectName} 的详情页缓存(名称格式)`);
-          
-          // 4. 清除标准化名称格式的缓存
-          const normalizedName = insectName.trim().toLowerCase();
-          const normalizedCacheKey = `insect_detail_${normalizedName}`;
-          wx.removeStorageSync(normalizedCacheKey);
-          console.log(`已清除昆虫 ${insectName} 的标准化名称详情页缓存`);
-          
-          // 5. 清除所有可能包含昆虫名称的缓存键
-          try {
-            // 获取所有存储的键
-            const storageInfo = wx.getStorageInfoSync();
-            storageInfo.keys.forEach(key => {
-              if (key.includes('insect_detail_') && 
-                  (key.includes(insectId) || key.includes(insectName) || 
-                   key.includes(normalizedName))) {
-                wx.removeStorageSync(key);
-                console.log(`已清除匹配的缓存键: ${key}`);
-              }
-            });
-          } catch (e) {
-            console.error('遍历存储键时出错:', e);
-          }
-          
-
-          
-          // 立即重新加载用户数据，确保删除后收集进度实时更新
-          this.loadUserData();
-          
-          // 显示删除成功提示
-          wx.showToast({
-            title: '删除成功',
-            icon: 'success'
-          });
-            },
-            fail: (err) => {
-              console.error(`删除昆虫记录失败: ${insectName}`, err);
-              wx.showToast({
-                title: '删除失败',
-                icon: 'none'
-              });
-            }
-          });
-        } else if (res.cancel) {
-          console.log(`用户取消删除昆虫: ${insectName}`);
-        }
-      }
-    });
-  },
-
-  // 图片自动补齐功能 - 检查并尝试加载未显示的图片
-  checkAndLoadMissingImages: function() {
-    console.log('开始检查并加载缺失的图片');
-    // 延迟执行，确保页面已经渲染完成
-    setTimeout(() => {
-      const { recentInsects } = this.data;
-      let hasMissingImages = false;
-      
-      // 昆虫预设图片URL映射表 - 与详情页保持一致
-    const insectImageUrls = {
-      '眼斑螳螂': 'https://img.alicdn.com/imgextra/i4/O1CN01aZxGmz1e0XyF5YjH3_!!6000000003688-0-lubanu.jpg',
-      '红珠凤蝶蛹': 'https://t7.baidu.com/it/u=228423286,3138567427&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=375',
-      '步甲幼虫': 'https://img.alicdn.com/imgextra/i3/O1CN01rO2WdQ1X5H9vZJXo0_!!6000000002730-0-lubanu.jpg',
-      '地鳖': 'https://img.alicdn.com/imgextra/i2/O1CN019hN6hQ1F7O9gG2y5Q_!!6000000000556-0-lubanu.jpg',
-      '蝴蝶': 'https://img.alicdn.com/imgextra/i2/O1CN01h7C1nL1f6Q3V2p4Ov_!!6000000003927-0-lubanu.jpg',
-      '蜜蜂': 'https://img.alicdn.com/imgextra/i1/O1CN01z2tQ9t1bZg6fE5L3C_!!6000000003886-0-lubanu.jpg',
-      '蚂蚁': 'https://img.alicdn.com/imgextra/i2/O1CN01KzO8nD1NQ4W7MfX4Y_!!6000000001886-0-lubanu.jpg',
-      '蜻蜓': 'https://img.alicdn.com/imgextra/i1/O1CN01M0CXuq1nJZ0Fd0o95_!!6000000005314-0-lubanu.jpg',
-      '变色树蜥': 'https://img.alicdn.com/imgextra/i4/O1CN01pJzrB61kPv7K1fXlE_!!6000000004453-0-lubanu.jpg',
-      '牡丹鹦鹉': 'https://img.alicdn.com/imgextra/i3/O1CN01Qx6JnX1nXn8Q3S42y_!!6000000005175-0-lubanu.jpg',
-      '幽灵螳螂': 'https://img.alicdn.com/imgextra/i3/O1CN0189y3p21wYd9Z3eZfF_!!6000000006304-0-lubanu.jpg',
-      '蓝舌石龙子': 'https://img.alicdn.com/imgextra/i3/O1CN01fSg40P1iT3WtX7n35_!!6000000004345-0-lubanu.jpg',
-      '中华大扁锹': 'https://img.alicdn.com/imgextra/i3/O1CN01Z1J3l91P2P2g8JwXg_!!6000000000601-0-lubanu.jpg',
-      '蓝孔雀': 'https://img.alicdn.com/imgextra/i4/O1CN01lB1nYl1e0XyD8jC6r_!!6000000003689-0-lubanu.jpg',
-      '姬兜': 'https://img.alicdn.com/imgextra/i4/O1CN01h1r3F51lB1nYl1e0X_!!6000000003687-0-lubanu.jpg',
-      '苏里南潜螈': 'https://img.alicdn.com/imgextra/i1/O1CN01zV0lXo1pUq8g4jFmE_!!6000000005502-0-lubanu.jpg',
-        '锹甲': 'https://img.alicdn.com/imgextra/i2/O1CN01H2M1Wz1Q1d1m5n1p2_!!6000000001204-0-lubanu.jpg',
-        '独角仙': 'https://img.alicdn.com/imgextra/i4/O1CN01BjW1gQ1zRQ8KZ0gHc_!!6000000006779-0-lubanu.jpg',
-        '金龟子': 'https://img.alicdn.com/imgextra/i1/O1CN01jO4I5s1zZ9Q9k3e7N_!!6000000006362-0-lubanu.jpg',
-        '七星瓢虫': 'https://img.alicdn.com/imgextra/i3/O1CN01YxqKbE1zK0I1W0Y0J_!!6000000006780-0-lubanu.jpg',
-        '竹节虫': 'https://img.alicdn.com/imgextra/i4/O1CN01tLk27p1tN9KQ7V0yq_!!6000000005940-0-lubanu.jpg',
-        '大刀螳螂': 'https://img.alicdn.com/imgextra/i1/O1CN01JkXy8S1rE7H1vL1p9_!!6000000005911-0-lubanu.jpg',
-        '蓝闪蝶': 'https://img.alicdn.com/imgextra/i1/O1CN01rUQ6uI1rPZ1K5o5fZ_!!6000000005029-0-lubanu.jpg'
-      };
-      
-      // 检查并更新图片，不区分大小写
-      const updatedInsects = filteredInsects.map(insect => {
-        console.log(`[图片调试] 检查昆虫图片: ${insect.name}, 当前URL: ${insect.imageUrl}`);
-        
-        // 为昆虫添加图片加载状态标记
-        const insectWithStatus = { ...insect, imageLoadStatus: insect.imageLoadStatus || 'unknown' };
-        
-        // 检查图片URL是否为空、使用默认图片或者格式不正确
-        if (!insectWithStatus.imageUrl || 
-            insectWithStatus.imageUrl === '/images/empty_insect.png' || 
-            !(insectWithStatus.imageUrl.startsWith('http') || insectWithStatus.imageUrl.startsWith('/'))) {
-          console.log(`[图片调试] ${insectWithStatus.name} 图片URL需要更新，当前状态: ${insectWithStatus.imageLoadStatus}`);
-          hasMissingImages = true;
-          
-          // 1. 尝试使用预设图片URL
-          const insectNameLower = insectWithStatus.name.toLowerCase();
-          for (const [key, value] of Object.entries(insectImageUrls)) {
-            if (key.toLowerCase() === insectNameLower) {
-              console.log(`为 ${insectWithStatus.name} 找到预设图片URL: ${value}`);
-              return { ...insectWithStatus, imageUrl: value, imageLoadStatus: 'preset' };
-            }
-          }
-          
-          // 2. 如果没有找到预设图片，尝试使用默认图片
-          console.log(`为 ${insectWithStatus.name} 设置灰态LOGO`);
-          return { ...insectWithStatus, imageUrl: '/images/empty_insect.png', imageLoadStatus: 'default' };
-        }
-        
-        return insectWithStatus;
-      });
-      
-      // 如果有更新，设置新数据
-      let hasUpdates = false;
-      for (let i = 0; i < filteredInsects.length; i++) {
-        if (filteredInsects[i].imageUrl !== updatedInsects[i].imageUrl) {
-          hasUpdates = true;
-          console.log(`[图片调试] 更新昆虫 ${filteredInsects[i].name} 的图片URL，从: ${filteredInsects[i].imageUrl} 到: ${updatedInsects[i].imageUrl}`);
-          break;
-        }
-      }
-      
-      if (hasUpdates) {
-        console.log('有图片URL更新，应用新数据');
-        this.setData({ recentInsects: updatedInsects });
-      } else if (hasMissingImages) {
-        // 如果仍有缺失图片，尝试从数据库重新获取
-        console.log('仍有缺失图片，尝试从数据库重新获取图片信息');
-        const db = wx.cloud.database();
-        const _ = db.command;
-        
-        // 获取所有昆虫的ID (仅包含未删除的)
-        const insectIds = filteredInsects.map(item => item.id);
-        
-        // 从数据库重新获取昆虫信息
-        db.collection('insects')
-          .where({
-            _id: _.in(insectIds)
-          })
-          .get()
-          .then(res => {
-            if (res.data.length > 0) {
-              // 创建昆虫信息映射
-              const insectMap = {};
-              res.data.forEach(insect => {
-                insectMap[insect._id] = insect;
-              });
-              
-              // 再次更新图片信息
-          const dbUpdatedInsects = [...updatedInsects];
-          let dbHasUpdates = false;
-          
-          console.log(`[图片调试] 从数据库获取到 ${res.data.length} 条昆虫信息`);
-          
-          for (let i = 0; i < dbUpdatedInsects.length; i++) {
-            const dbInsect = insectMap[dbUpdatedInsects[i].id];
-            if (dbInsect && dbInsect.imageUrl && dbInsect.imageUrl !== dbUpdatedInsects[i].imageUrl) {
-              dbUpdatedInsects[i] = { ...dbUpdatedInsects[i], imageUrl: dbInsect.imageUrl };
-              dbHasUpdates = true;
-              console.log(`[图片调试] 从数据库更新昆虫 ${dbUpdatedInsects[i].name} 的图片URL，从: ${dbUpdatedInsects[i].imageUrl} 到: ${dbInsect.imageUrl}`);
-            }
-          }
-              
-              if (dbHasUpdates) {
-                this.setData({ recentInsects: dbUpdatedInsects });
-              }
-            }
-          })
-          .catch(err => {
-            console.error('重新加载图片信息失败:', err);
-          });
-      }
-      
-      console.log('图片检查和加载完成');
-    }, 1500); // 1.5秒延迟，确保页面渲染完成
-  }
 });

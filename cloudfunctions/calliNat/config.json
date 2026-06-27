@@ -1,9 +1,15 @@
 {
-  "timeout": 30000,
   "permissions": {
-    "openapi": [
-      "wxacode.get",
-      "templateMessage.send"
-    ]
+    "openapi": []
+  },
+  "runtime": "Nodejs16",
+  "timeout": 30,
+  "memorySize": 256,
+  "environment": {
+    "variables": {
+      "ARK_API_KEY": "487c8cdb-3a9a-4079-abfd-d9bb625cbfdf",
+      "ARK_BASE_URL": "https://ark.cn-beijing.volces.com/api/v3/",
+      "MODEL_ID": "doubao-seed-1-6-vision-250815"
+    }
   }
 }

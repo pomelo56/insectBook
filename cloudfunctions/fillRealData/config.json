@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "openapi": [],
+    "database": {
+      "read": ["*"],
+      "write": ["*"]
+    },
+    "storage": [],
+    "cloud": {
+      "resourceAppid": ""
+    }
+  },
+  "timeout": 5000
+}

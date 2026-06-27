@@ -1,0 +1,50 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/camera/camera",
+    "pages/admin/index",
+    "pages/admin/fun-facts/fun-facts",
+    "pages/admin/users/users",
+    "pages/admin/insects/insects",
+    "pages/admin/insects/detail-insect",
+    "pages/admin/badges/badges"
+  ],
+  "subpackages": [
+    {
+      "root": "subpages",
+      "pages": [
+        "badges/badges",
+        "insect-detail/insect-detail",
+        "discovery/discovery",
+        "edit-discovery/edit-discovery"
+      ]
+    }
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "昆虫手册",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "color": "#8a8a8a",
+    "selectedColor": "#3cc51f",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "images/home.png",
+        "selectedIconPath": "images/home-active.png"
+      },
+      {
+        "pagePath": "pages/camera/camera",
+        "text": "识别",
+        "iconPath": "images/camera.png",
+        "selectedIconPath": "images/camera-active.png"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

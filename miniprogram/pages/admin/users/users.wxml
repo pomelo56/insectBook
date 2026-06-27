@@ -1,0 +1,72 @@
+<!-- miniprogram/pages/admin/users/users.wxml -->
+<view class="users-container">
+  <view class="header">
+    <view class="search-bar">
+      <input 
+        type="text" 
+        placeholder="搜索用户（昵称/ID）" 
+        value="{{searchKey}}"
+        bindinput="onSearch"
+        class="search-input"
+      />
+      <image src="/images/icons/search.png" class="search-icon"></image>
+    </view>
+  </view>
+
+  <view class="filter-bar">
+    <picker bindchange="onFilterChange" value="{{currentFilter}}" range-key="name" range="{{filterOptions}}" class="filter-picker">
+      <view class="picker-item">
+        {{currentFilter === 'all' ? '全部用户' : currentFilter === 'active' ? '活跃用户' : '新用户'}}
+        <image src="/images/icons/arrow-down.png" class="arrow-icon"></image>
+      </view>
+    </picker>
+    
+    <picker bindchange="onSortChange" value="{{currentSort}}" range-key="name" range="{{sortOptions}}" class="sort-picker">
+      <view class="picker-item">
+        {{currentSort === 'registerTime' ? '注册时间' : currentSort === 'collectedCount' ? '收集数量' : '等级'}}
+        <image 
+          src="{{sortOrder === 'desc' ? '/images/icons/sort-desc.png' : '/images/icons/sort-asc.png'}}" 
+          class="sort-icon"
+        ></image>
+      </view>
+    </picker>
+  </view>
+
+  <view class="users-list">
+    <view wx:if="{{loading && users.length === 0}}" class="loading">
+      <image src="/images/icons/loading.gif" class="loading-icon"></image>
+      <text>加载中...</text>
+    </view>
+    
+    <view wx:elif="{{users.length === 0}}" class="empty">
+      <image src="/images/icons/empty.png" class="empty-icon"></image>
+      <text>暂无用户数据</text>
+    </view>
+    
+    <view 
+      wx:for="{{users}}" 
+      wx:key="openid"
+      class="user-item"
+      bindtap="viewUserDetail"
+      data-id="{{item.openid}}"
+    >
+      <view class="user-info">
+        <image src="{{item.avatarUrl || '/images/avatar.png'}}" class="avatar"></image>
+        <view class="user-details">
+          <view class="user-name">{{item.nickName || '未知用户'}}</view>
+          <view class="user-meta">
+            <text class="meta-item">ID: {{item.openid}}</text>
+            <text class="meta-item">收集: {{item.collectedCount || 0}} 只</text>
+            <text class="meta-item">等级: {{item.level || 1}}</text>
+          </view>
+          <view class="register-time">注册时间: {{item.registerTime}}</view>
+        </view>
+      </view>
+      <image src="/images/icons/arrow-right.png" class="right-arrow"></image>
+    </view>
+  </view>
+
+  <view wx:if="{{loading && users.length > 0}}" class="load-more">
+    <text>加载更多...</text>
+  </view>
+</view>

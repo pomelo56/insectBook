@@ -1,0 +1,212 @@
+/* miniprogram/pages/admin/badges/badges.wxss */
+.badges-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 20rpx;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.page-title {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.add-button, .import-button {
+  width: 200rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  font-size: 28rpx;
+  padding: 0;
+  margin-left: 10rpx;
+}
+
+.badges-list {
+  background-color: #fff;
+  border-radius: 10rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.badge-item {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.badge-item:last-child {
+  border-bottom: none;
+}
+
+.badge-content {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.badge-icon {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  margin-right: 20rpx;
+}
+
+.badge-info {
+  flex: 1;
+}
+
+.badge-name {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.badge-requirement {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.badge-description {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.edit-button, .delete-button {
+  width: 150rpx;
+  margin-left: 20rpx;
+  font-size: 28rpx;
+}
+
+.loading, .empty {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999;
+}
+
+.loading-icon, .empty-icon {
+  width: 100rpx;
+  height: 100rpx;
+  margin-bottom: 20rpx;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.edit-modal {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border-top-left-radius: 20rpx;
+  border-top-right-radius: 20rpx;
+  z-index: 1001;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.close-btn {
+  font-size: 48rpx;
+  color: #999;
+  padding: 0 20rpx;
+}
+
+.modal-content {
+  padding: 30rpx;
+}
+
+.form-item {
+  margin-bottom: 30rpx;
+}
+
+.label {
+  display: block;
+  font-size: 32rpx;
+  color: #666;
+  margin-bottom: 15rpx;
+}
+
+.input, .textarea {
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  padding: 20rpx;
+  font-size: 32rpx;
+}
+
+.textarea {
+  min-height: 150rpx;
+  font-size: 28rpx;
+}
+
+.icon-upload {
+  display: flex;
+  align-items: center;
+}
+
+.preview-icon {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50rpx;
+  margin-right: 20rpx;
+}
+
+.modal-footer {
+  display: flex;
+  padding: 30rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.modal-footer button {
+  flex: 1;
+  margin: 0 10rpx;
+  font-size: 32rpx;
+}
+
+/* 适配不同尺寸屏幕 */
+@media (min-width: 768px) {
+  .badges-container {
+    padding: 40rpx;
+  }
+  
+  .badge-item {
+    padding: 40rpx;
+  }
+}
+
+.badge-icon {
+  /* 移除动画，避免图片闪烁 */
+}

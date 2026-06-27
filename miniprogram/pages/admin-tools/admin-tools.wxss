@@ -1,0 +1,183 @@
+/* 管理员工具页面样式 */
+/* 页面：/pages/admin-tools/admin-tools.wxss */
+.container {
+  padding: 30rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40rpx;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #ddd;
+}
+
+.title {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.content {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 加载状态 */
+.loading-container {
+  text-align: center;
+  padding: 60rpx 0;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  margin: 0 auto 20rpx;
+  border: 8rpx solid #f3f3f3;
+  border-top: 8rpx solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 信息展示 */
+.info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30rpx;
+}
+
+.status-section {
+  padding: 20rpx;
+  background-color: #f9f9f9;
+  border-radius: 12rpx;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+
+.status-badge {
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+}
+
+.status-badge.admin {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.status-badge.normal {
+  background-color: #f5f5f5;
+  color: #999;
+}
+
+.status-text {
+  font-size: 24rpx;
+  font-weight: bold;
+}
+
+.message {
+  font-size: 28rpx;
+  color: #666;
+  word-break: break-word;
+}
+
+.openid-section,
+.config-section,
+.instruction-section {
+  padding: 20rpx;
+  background-color: #f9f9f9;
+  border-radius: 12rpx;
+}
+
+.label {
+  display: block;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15rpx;
+}
+
+.openid-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 15rpx;
+}
+
+.openid-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #666;
+  background-color: #fff;
+  padding: 15rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid #ddd;
+  word-break: break-all;
+  min-width: 0;
+}
+
+.copy-btn {
+  flex-shrink: 0;
+}
+
+.config-text {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.instruction-content {
+  background-color: #fff9e6;
+  padding: 20rpx;
+  border-radius: 8rpx;
+  border-left: 6rpx solid #faad14;
+}
+
+.instruction-text {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+  line-height: 1.5;
+}
+
+.instruction-text:last-child {
+  margin-bottom: 0;
+}
+
+/* 操作按钮 */
+.actions {
+  display: flex;
+  gap: 20rpx;
+  justify-content: center;
+  margin-top: 20rpx;
+}
+
+/* 响应式调整 */
+@media screen and (min-width: 768px) {
+  .container {
+    max-width: 600rpx;
+    margin: 0 auto;
+    padding: 40rpx;
+  }
+}

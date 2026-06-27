@@ -1,0 +1,85 @@
+<!-- 管理员工具页面 -->
+<!-- 页面：/pages/admin-tools/admin-tools.wxml -->
+<view class="container">
+  <view class="header">
+    <text class="title">管理员工具</text>
+  </view>
+
+  <view class="content">
+    <!-- 加载状态 -->
+    <view wx:if="{{isLoading}}" class="loading-container">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">{{message}}</text>
+    </view>
+
+    <!-- 信息展示 -->
+    <view wx:else class="info-container">
+      <!-- 管理员状态 -->
+      <view class="status-section">
+        <view class="status-header">
+          <text class="label">管理员状态:</text>
+          <view class="status-badge {{isAdmin ? 'admin' : 'normal'}}">
+            <text class="status-text">{{isAdmin ? '是管理员' : '非管理员'}}</text>
+          </view>
+        </view>
+        <text class="message">{{message}}</text>
+      </view>
+
+      <!-- OpenID 信息 -->
+      <view class="openid-section">
+        <text class="label">您的OpenID:</text>
+        <view class="openid-container">
+          <text selectable="true" class="openid-text">{{openid || '获取中...'}}</text>
+          <button 
+            wx:if="{{openid}}" 
+            class="copy-btn" 
+            type="primary" 
+            size="mini" 
+            bindtap="copyOpenid"
+          >
+            复制
+          </button>
+        </view>
+      </view>
+
+      <!-- 配置信息 -->
+      <view class="config-section">
+        <text class="label">配置信息:</text>
+        <text class="config-text">已配置管理员数量: {{configuredAdmins}}</text>
+        <text class="config-text">当前账号是否已配置: {{isConfigured ? '是' : '否'}}</text>
+      </view>
+
+      <!-- 权限说明 -->
+      <view wx:if="{{!isAdmin}}" class="instruction-section">
+        <text class="label">获取管理员权限:</text>
+        <view class="instruction-content">
+          <text class="instruction-text">1. 复制上方的OpenID</text>
+          <text class="instruction-text">2. 联系开发者将您的OpenID添加到云函数checkAdminPermission的ADMIN_OPENIDS数组中</text>
+          <text class="instruction-text">3. 重新部署云函数checkAdminPermission</text>
+          <text class="instruction-text">4. 刷新本页面查看权限变更</text>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="actions">
+        <button 
+          type="primary" 
+          size="mini" 
+          bindtap="refresh"
+          loading="{{isLoading}}"
+        >
+          刷新
+        </button>
+        
+        <button 
+          type="warn" 
+          size="mini" 
+          wx:if="{{isAdmin}}" 
+          bindtap="goToAdminPage"
+        >
+          进入管理后台
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

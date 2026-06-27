@@ -1,0 +1,33 @@
+<!-- miniprogram/pages/admin/index.wxml -->
+<view class="admin-container">
+  <view class="header">
+    <text class="title">管理后台</text>
+    <view class="tips">仅管理员可访问</view>
+  </view>
+
+  <!-- 权限验证失败提示 -->
+  <view wx:if="{{loginFailed}}" class="permission-denied">
+    <image src="/images/icons/lock.png" class="lock-icon"></image>
+    <text class="denied-text">无管理员权限，请联系系统管理员</text>
+    <button type="primary" bindtap="goBack">返回首页</button>
+  </view>
+
+  <!-- 管理菜单 -->
+  <view wx:else class="menu-container">
+    <view class="menu-grid">
+      <view 
+        wx:for="{{menuList}}" 
+        wx:key="id"
+        class="menu-item"
+        bindtap="navigateToPage"
+        data-id="{{item.id}}"
+      >
+        <view class="icon-container">
+          <!-- 禁用懒加载并添加图片加载优化，防止图标闪烁 -->
+          <image src="{{item.icon}}" class="menu-icon" mode="aspectFit" lazy-load="false" bindload="onImageLoad" binderror="onImageError"></image>
+        </view>
+        <text class="menu-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+</view>

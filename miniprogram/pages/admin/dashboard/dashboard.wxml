@@ -1,0 +1,116 @@
+<!--miniprogram/pages/admin/dashboard/dashboard.wxml-->
+<view class="dashboard-container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">管理员仪表板</text>
+    <view class="header-actions">
+      <button class="refresh-btn" bindtap="onRefresh" disabled="{{loading}}">
+        <image src="/images/icons/refresh.svg" class="btn-icon"></image>
+        刷新
+      </button>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 主要内容 -->
+  <view wx:else class="dashboard-content">
+    <!-- 统计卡片 -->
+    <view class="statistics-section">
+      <text class="section-title">数据统计</text>
+      <view class="stats-grid">
+        <view class="stat-card" bindtap="navigateToManagement" data-type="users">
+          <view class="stat-icon users-icon">
+            <image src="/images/icons/users.png" class="icon"></image>
+          </view>
+          <view class="stat-info">
+            <text class="stat-number">{{statistics.totalUsers}}</text>
+            <text class="stat-label">用户总数</text>
+          </view>
+        </view>
+
+        <view class="stat-card" bindtap="navigateToManagement" data-type="insects">
+          <view class="stat-icon insects-icon">
+            <image src="/images/icons/bug.svg" class="icon"></image>
+          </view>
+          <view class="stat-info">
+            <text class="stat-number">{{statistics.totalInsects}}</text>
+            <text class="stat-label">昆虫种类</text>
+          </view>
+        </view>
+
+        <view class="stat-card" bindtap="navigateToManagement" data-type="badges">
+          <view class="stat-icon badges-icon">
+            <image src="/images/icons/trophy.svg" class="icon"></image>
+          </view>
+          <view class="stat-info">
+            <text class="stat-number">{{statistics.totalBadges}}</text>
+            <text class="stat-label">勋章类型</text>
+          </view>
+        </view>
+
+        <view class="stat-card" bindtap="navigateToManagement" data-type="funFacts">
+          <view class="stat-icon facts-icon">
+            <image src="/images/icons/lightbulb.svg" class="icon"></image>
+          </view>
+          <view class="stat-info">
+            <text class="stat-number">{{statistics.totalFunFacts}}</text>
+            <text class="stat-label">冷知识</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快速操作 -->
+    <view class="quick-actions-section">
+      <text class="section-title">快速操作</text>
+      <view class="actions-grid">
+        <view wx:for="{{quickActions}}" wx:key="id" 
+              class="action-card" 
+              bindtap="handleQuickAction" 
+              data-id="{{item.id}}">
+          <view class="action-icon">
+            <image src="{{item.icon}}" class="icon" mode="aspectFit"></image>
+          </view>
+          <text class="action-label">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 最近活动 -->
+    <view class="recent-activities-section">
+      <text class="section-title">最近活动</text>
+      <view class="activities-list">
+        <view wx:for="{{recentActivities}}" wx:key="index" class="activity-item">
+          <view class="activity-icon {{item.type}}-activity">
+            <image src="/images/icons/{{item.type}}.png" class="icon"></image>
+          </view>
+          <view class="activity-content">
+            <text class="activity-action">{{item.action}}</text>
+            <text class="activity-detail">{{item.detail}}</text>
+            <text class="activity-time">{{item.time}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 系统操作 -->
+    <view class="system-actions-section">
+      <text class="section-title">系统操作</text>
+      <view class="system-actions">
+        <button class="system-btn export-btn" bindtap="exportData">
+          <image src="/images/icons/download.svg" class="btn-icon"></image>
+          数据导出
+        </button>
+        <button class="system-btn backup-btn" bindtap="backupData">
+          <image src="/images/icons/backup.svg" class="btn-icon"></image>
+          数据备份
+        </button>
+      </view>
+    </view>
+  </view>
+</view>

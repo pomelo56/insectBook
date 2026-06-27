@@ -1,0 +1,14 @@
+{
+  "name": "createMissingCollections",
+  "version": "1.0.0",
+  "description": "创建缺失的数据库集合云函数",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

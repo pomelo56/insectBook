@@ -1,0 +1,318 @@
+// 使用真实数据填充数据库云函数
+const cloud = require('wx-server-sdk');
+
+// 初始化云环境
+cloud.init({
+  env: cloud.DYNAMIC_CURRENT_ENV
+});
+
+const db = cloud.database();
+
+// 主函数
+exports.main = async (event, context) => {
+  try {
+    console.log('开始填充真实昆虫数据...');
+    
+    // 导入真实数据
+    const realData = {
+      users: [
+        {
+          _id: 'user1',
+          openId: 'oXpOs5f8Z9k1q2r3t4y5u6i7o8p',
+          nickName: '李明',
+          avatarUrl: 'https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTLIbJg7jNnV3nV3jJgZgZgZgZgZgZgZgZgZgZgZgZg/132',
+          foundCount: 23,
+          badgeCount: 4,
+          createdAt: new Date('2023-10-15T08:30:00Z'),
+          lastLoginAt: new Date('2023-12-05T14:20:00Z'),
+          isAdmin: true
+        },
+        {
+          _id: 'user2',
+          openId: 'oXpOs5g9A0l2s3d4f5g6h7j8k9l',
+          nickName: '王芳',
+          avatarUrl: 'https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTLKcFh7kNnV4nV4jJgZgZgZgZgZgZgZgZgZgZgZgZg/132',
+          foundCount: 15,
+          badgeCount: 3,
+          createdAt: new Date('2023-11-02T10:15:00Z'),
+          lastLoginAt: new Date('2023-12-04T09:45:00Z'),
+          isAdmin: false
+        },
+        {
+          _id: 'user3',
+          openId: 'oXpOs5h0B1m3s4d5f6g7h8j9k0l',
+          nickName: '张伟',
+          avatarUrl: 'https://thirdwx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTLMcGh7kNnV5nV5jJgZgZgZgZgZgZgZgZgZgZgZgZg/132',
+          foundCount: 8,
+          badgeCount: 2,
+          createdAt: new Date('2023-11-20T16:50:00Z'),
+          lastLoginAt: new Date('2023-12-01T11:30:00Z'),
+          isAdmin: false
+        }
+      ],
+      badges: [
+        {
+          _id: 'badge1',
+          name: '昆虫探索者',
+          description: '首次识别10种不同的昆虫',
+          icon: '/images/icons/badge_explorer.png',
+          condition: '识别10种昆虫',
+          points: 100,
+          createdAt: new Date('2023-10-01T00:00:00Z'),
+          updatedAt: new Date('2023-10-01T00:00:00Z'),
+          awardedCount: 156
+        },
+        {
+          _id: 'badge2',
+          name: '自然观察家',
+          description: '连续7天使用昆虫图鉴',
+          icon: '/images/icons/badge_observer.png',
+          condition: '连续7天登录',
+          points: 200,
+          createdAt: new Date('2023-10-01T00:00:00Z'),
+          updatedAt: new Date('2023-10-01T00:00:00Z'),
+          awardedCount: 89
+        },
+        {
+          _id: 'badge3',
+          name: '知识分享者',
+          description: '分享10条昆虫冷知识',
+          icon: '/images/icons/badge_sharer.png',
+          condition: '分享10条冷知识',
+          points: 150,
+          createdAt: new Date('2023-10-01T00:00:00Z'),
+          updatedAt: new Date('2023-10-01T00:00:00Z'),
+          awardedCount: 45
+        },
+        {
+          _id: 'badge4',
+          name: '收藏家',
+          description: '收集50种不同的昆虫资料',
+          icon: '/images/icons/badge_collector.png',
+          condition: '收集50种昆虫',
+          points: 300,
+          createdAt: new Date('2023-10-01T00:00:00Z'),
+          updatedAt: new Date('2023-10-01T00:00:00Z'),
+          awardedCount: 12
+        },
+        {
+          _id: 'badge5',
+          name: '鉴定大师',
+          description: '准确鉴定30种不同的昆虫',
+          icon: '/images/icons/badge_master.png',
+          condition: '准确鉴定30种昆虫',
+          points: 500,
+          createdAt: new Date('2023-10-01T00:00:00Z'),
+          updatedAt: new Date('2023-10-01T00:00:00Z'),
+          awardedCount: 5
+        }
+      ],
+      fun_facts: [
+        {
+          _id: 'fact1',
+          title: '蚂蚁的力量',
+          content: '蚂蚁可以搬动比自己体重重50倍的物体，相当于一个成年人搬动一辆小汽车！蚂蚁的肌肉结构特殊，能够产生与体型不成比例的力量。',
+          insectType: '蚂蚁',
+          likes: 245,
+          images: [],
+          createdAt: new Date('2023-10-10T09:20:00Z'),
+          updatedAt: new Date('2023-10-10T09:20:00Z'),
+          createdBy: 'user1',
+          viewCount: 1250
+        },
+        {
+          _id: 'fact2',
+          title: '蝴蝶的视觉系统',
+          content: '蝴蝶的复眼由约1.7万个小眼组成，能够看到人类看不到的紫外线。这些紫外线视觉帮助蝴蝶找到含有花蜜的花朵，因为许多花朵在紫外线下会显示出特殊的\'花蜜指南\'。',
+          insectType: '蝴蝶',
+          likes: 189,
+          images: [],
+          createdAt: new Date('2023-10-12T14:35:00Z'),
+          updatedAt: new Date('2023-10-12T14:35:00Z'),
+          createdBy: 'user2',
+          viewCount: 980
+        },
+        {
+          _id: 'fact3',
+          title: '蝉的生命周期',
+          content: '蝉在地下的若虫阶段可以生活长达17年，而一旦爬出地面羽化为成虫，寿命只有短短2-4周。这段短暂的成虫期主要用于交配和产卵，完成生命周期。',
+          insectType: '蝉',
+          likes: 167,
+          images: [],
+          createdAt: new Date('2023-10-15T11:10:00Z'),
+          updatedAt: new Date('2023-10-15T11:10:00Z'),
+          createdBy: 'user1',
+          viewCount: 890
+        },
+        {
+          _id: 'fact4',
+          title: '蜜蜂的舞蹈语言',
+          content: '蜜蜂通过一种称为\'摇摆舞\'的特殊舞蹈来传达食物源的位置信息。当蜜源距离蜂巢较近时，蜜蜂会跳圆形舞；当距离较远时，则会跳8字形舞，并通过舞蹈的角度和持续时间精确指示方向和距离。',
+          insectType: '蜜蜂',
+          likes: 210,
+          images: [],
+          createdAt: new Date('2023-10-18T15:40:00Z'),
+          updatedAt: new Date('2023-10-18T15:40:00Z'),
+          createdBy: 'user3',
+          viewCount: 1120
+        },
+        {
+          _id: 'fact5',
+          title: '蜻蜓的飞行能力',
+          content: '蜻蜓是地球上飞行能力最强的昆虫之一，能够以每小时50公里的速度飞行。它们可以向前、向后、左右飞行，甚至可以在空中悬停和突然改变方向，这种飞行灵活性得益于它们特殊的翅膀结构和肌肉系统。',
+          insectType: '蜻蜓',
+          likes: 178,
+          images: [],
+          createdAt: new Date('2023-10-20T10:25:00Z'),
+          updatedAt: new Date('2023-10-20T10:25:00Z'),
+          createdBy: 'user2',
+          viewCount: 950
+        }
+      ],
+      insects: [
+        {
+          _id: 'insect1',
+          name: '中华蜜蜂',
+          scientificName: 'Apis cerana cerana',
+          family: '蜜蜂科',
+          order: '膜翅目',
+          description: '中华蜜蜂是中国本土的蜜蜂品种，具有适应性强、善于采集零星蜜源的特点。它们对于维护生态平衡和农业生产具有重要意义。',
+          habitat: '山林、丘陵、平原等地区',
+          features: '身体黄褐色，腹部有黑色条纹，后足有花粉筐',
+          images: ['https://res.wx.qq.com/wxdoc/dist/assets/img/example-bg.2f46c3d8.jpg'],
+          status: '易危',
+          createdAt: new Date('2023-09-20T08:00:00Z'),
+          updatedAt: new Date('2023-09-20T08:00:00Z'),
+          foundCount: 156
+        },
+        {
+          _id: 'insect2',
+          name: '玉带凤蝶',
+          scientificName: 'Papilio polytes',
+          family: '凤蝶科',
+          order: '鳞翅目',
+          description: '玉带凤蝶是一种常见的大型蝴蝶，雄蝶后翅有一条白色横带，雌蝶有多型现象。喜欢访花吸蜜，飞行姿态优美。',
+          habitat: '公园、花园、森林边缘',
+          features: '翅展70-90mm，雄蝶后翅有白色横带，雌蝶有多种形态',
+          images: ['https://res.wx.qq.com/wxdoc/dist/assets/img/example-bg.2f46c3d8.jpg'],
+          status: '常见',
+          createdAt: new Date('2023-09-22T10:30:00Z'),
+          updatedAt: new Date('2023-09-22T10:30:00Z'),
+          foundCount: 234
+        },
+        {
+          _id: 'insect3',
+          name: '红蚂蚁',
+          scientificName: 'Tetramorium bicarinatum',
+          family: '蚁科',
+          order: '膜翅目',
+          description: '红蚂蚁是一种常见的小型蚂蚁，喜欢在温暖干燥的环境中筑巢。杂食性，会捕食小昆虫和采集植物蜜露。',
+          habitat: '草丛、树林、庭院',
+          features: '体长3-4mm，身体红色或红棕色，触角12节',
+          images: ['https://res.wx.qq.com/wxdoc/dist/assets/img/example-bg.2f46c3d8.jpg'],
+          status: '非常常见',
+          createdAt: new Date('2023-09-25T14:15:00Z'),
+          updatedAt: new Date('2023-09-25T14:15:00Z'),
+          foundCount: 345
+        },
+        {
+          _id: 'insect4',
+          name: '草蝉',
+          scientificName: 'Mogannia hebes',
+          family: '蝉科',
+          order: '半翅目',
+          description: '草蝉是一种小型蝉类，常见于草丛中。雄性能够发出清脆的鸣叫声，用以吸引雌性。',
+          habitat: '草地、农田、灌木丛',
+          features: '体长约20mm，体绿色或黄绿色，复眼红色',
+          images: ['https://res.wx.qq.com/wxdoc/dist/assets/img/example-bg.2f46c3d8.jpg'],
+          status: '常见',
+          createdAt: new Date('2023-09-28T09:45:00Z'),
+          updatedAt: new Date('2023-09-28T09:45:00Z'),
+          foundCount: 189
+        },
+        {
+          _id: 'insect5',
+          name: '碧伟蜓',
+          scientificName: 'Anax parthenope',
+          family: '蜓科',
+          order: '蜻蜓目',
+          description: '碧伟蜓是一种大型蜻蜓，常见于水域附近。飞行迅速，善于捕食空中的小昆虫。',
+          habitat: '湖泊、河流、池塘等水域附近',
+          features: '体长约70mm，体绿色，复眼蓝色，翅膀透明',
+          images: ['https://res.wx.qq.com/wxdoc/dist/assets/img/example-bg.2f46c3d8.jpg'],
+          status: '常见',
+          createdAt: new Date('2023-10-01T11:20:00Z'),
+          updatedAt: new Date('2023-10-01T11:20:00Z'),
+          foundCount: 145
+        }
+      ]
+    };
+    
+    // 1. 填充用户数据
+    const usersResult = await fillCollection('users', realData.users);
+    
+    // 2. 填充勋章数据
+    const badgesResult = await fillCollection('badges', realData.badges);
+    
+    // 3. 填充冷知识数据
+    const funFactsResult = await fillCollection('fun_facts', realData.fun_facts);
+    
+    // 4. 填充昆虫数据
+    const insectsResult = await fillCollection('insects', realData.insects);
+    
+    return {
+      success: true,
+      message: '真实昆虫数据填充成功！',
+      data: {
+        users: usersResult,
+        badges: badgesResult,
+        funFacts: funFactsResult,
+        insects: insectsResult
+      }
+    };
+  } catch (error) {
+    console.error('填充真实数据失败:', error);
+    return {
+      success: false,
+      message: '数据填充失败',
+      error: error.message
+    };
+  }
+};
+
+// 通用集合填充函数
+async function fillCollection(collectionName, dataList) {
+  try {
+    console.log(`开始填充 ${collectionName} 集合，共 ${dataList.length} 条数据`);
+    
+    let successCount = 0;
+    let failedCount = 0;
+    const failedItems = [];
+    
+    // 插入数据
+    for (const item of dataList) {
+      try {
+        await db.collection(collectionName).doc(item._id).set({
+          data: item
+        });
+        successCount++;
+        console.log(`成功添加 ${collectionName} 数据: ${item.name || item.title || item._id}`);
+      } catch (e) {
+        failedCount++;
+        failedItems.push({ id: item._id, name: item.name || item.title || item._id, error: e.message });
+        console.log(`添加 ${collectionName} 数据失败: ${item.name || item.title || item._id}`, e);
+      }
+    }
+    
+    return { 
+      added: successCount, 
+      failed: failedCount,
+      total: dataList.length,
+      message: `${collectionName} 数据填充完成，成功添加 ${successCount}/${dataList.length} 条，失败 ${failedCount} 条`,
+      failedItems: failedItems.length > 0 ? failedItems : null
+    };
+  } catch (error) {
+    console.error(`填充 ${collectionName} 集合失败:`, error);
+    throw error;
+  }
+}

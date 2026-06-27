@@ -1,0 +1,112 @@
+<view class="container">
+  <!-- 主内容区 - 使用分块加载状态管理 -->
+  <view class="content">
+    <!-- 昆虫基本信息块 -->
+    <view wx:if="{{loadingBasicInfo}}" class="loading-container">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+    
+    <view wx:elif="{{basicInfoError}}" class="error-block">
+      <image src="/images/error.png" class="error-image"></image>
+      <text class="error-text">{{basicInfoError}}</text>
+      <button size="mini" bindtap="refreshBasicInfo" class="retry-btn">重试</button>
+    </view>
+    
+    <view wx:else>
+      <!-- 头部整体容器 -->
+      <view class="header-overall">
+        <view class="insect-image-container">
+          <image src="{{insectInfo.imageUrl || '/images/default_insect.png'}}" class="insect-image" mode="aspectFit" bindtap="previewImage"/>
+        </view>
+        <view class="name-section">
+          <text class="insect-name">{{insectInfo.name || '未知昆虫'}}</text>
+          <text class="insect-scientific-name" wx:if="{{insectInfo.scientificName}}">({{insectInfo.scientificName}})</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 发现记录模块 -->
+  <view class="module-container discovery-module">
+    <view class="module-header">
+      <text class="module-title">发现记录（{{insectInfo.foundCount || 0}}）</text>
+      <view wx:if="{{loadingDiscoveryRecords}}" class="loading-text">加载中...</view>
+    </view>
+    
+    <view wx:if="{{discoveryError}}" class="error-block">
+      <text class="error-text">{{discoveryError}}</text>
+      <button size="mini" bindtap="refreshDiscoveryRecords" class="retry-btn">重试</button>
+    </view>
+    
+    <view wx:else class="discovery-content">
+      <!-- 发现记录区域 -->
+      
+      <!-- 发现记录时间线 -->
+      <view class="compact-timeline" wx:if="{{discoveryRecords.length > 0}}">
+        <view class="compact-item" wx:for="{{discoveryRecords}}" wx:key="index">
+          <view class="compact-content">
+            <text class="compact-time">{{item.formattedTime || item.time}}</text>
+            <view wx:if="{{item.userImageUrl}}" class="image-container">
+              <image class="compact-image" 
+                     src="{{item.userImageUrl}}" 
+                     mode="aspectFill" 
+                     bindtap="previewDiscoveryImage" 
+                     data-url="{{item.userImageUrl}}"/>
+            </view>
+          </view>
+        </view>
+        <!-- 展开更多按钮 -->
+        <view class="load-more-btn" wx:if="{{hasMoreRecords}}" bindtap="loadMoreRecords">
+          <text class="load-more-text">展开更多</text>
+        </view>
+      </view>
+      
+      <!-- 当有发现次数但没有具体记录时的提示 -->
+      <view class="empty-records-with-count" wx:elif="{{insectInfo.foundCount > 0 && discoveryRecords.length === 0}}">
+        <text>您已发现 {{insectInfo.foundCount}} 次，但暂无详细记录</text>
+        <text class="hint-text">每次发现时会自动保存记录</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 百科信息模块 -->
+  <view class="module-container encyclopedia-module" wx:if="{{insectInfo.description || insectInfo.habitat || insectInfo.food || (insectInfo.encyclopedia && (insectInfo.encyclopedia.description || insectInfo.encyclopedia.habitat || insectInfo.encyclopedia.food))}}">
+    <view class="module-header">
+      <text class="module-title">百科信息</text>
+    </view>
+    <view class="encyclopedia-content">
+      <!-- 描述部分，支持折叠功能 -->
+      <view wx:if="{{insectInfo.description || insectInfo.encyclopedia.description}}" class="encyclopedia-section">
+        <view class="encyclopedia-text-container">
+          <text class="encyclopedia-text {{needExpandEncyclopedia && !encyclopediaExpanded ? 'encyclopedia-text-collapsed' : ''}}">
+            {{insectInfo.description || insectInfo.encyclopedia.description}}
+          </text>
+        </view>
+        <!-- 折叠/展开按钮 -->
+        <view wx:if="{{needExpandEncyclopedia}}" class="expand-btn" bindtap="toggleEncyclopedia">
+          <text class="expand-btn-text">{{encyclopediaExpanded ? '收起' : '展开更多'}}</text>
+          <text class="expand-icon">{{encyclopediaExpanded ? '▲' : '▼'}}</text>
+        </view>
+      </view>
+      <!-- 栖息地和食物部分 - 只有值不为空且不是"未知"时才显示 -->
+      <view wx:if="{{(insectInfo.habitat && insectInfo.habitat !== '未知') || (insectInfo.encyclopedia.habitat && insectInfo.encyclopedia.habitat !== '未知')}}" class="encyclopedia-subsection">
+        <text class="encyclopedia-label">栖息地：</text>
+        <text class="encyclopedia-text">{{insectInfo.habitat || insectInfo.encyclopedia.habitat}}</text>
+      </view>
+      <view wx:if="{{(insectInfo.food && insectInfo.food !== '未知') || (insectInfo.encyclopedia.food && insectInfo.encyclopedia.food !== '未知')}}" class="encyclopedia-subsection">
+        <text class="encyclopedia-label">食物：</text>
+        <text class="encyclopedia-text">{{insectInfo.food || insectInfo.encyclopedia.food}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 图片预览模态框 -->
+<view class="image-modal" wx:if="{{showModal}}">
+  <view class="modal-overlay" bindtap="closeModal"></view>
+  <view class="modal-content">
+    <image class="preview-image" src="{{currentImageUrl}}" mode="aspectFit"></image>
+    <view class="close-btn" bindtap="closeModal">关闭</view>
+  </view>
+</view>

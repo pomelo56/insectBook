@@ -12,3 +12,12 @@ $RECYCLE.BIN/
 
 # Node.js
 node_modules/
+
+# Deployment logs
+deployment_logs/
+
+# Runtime / temp
+*.log
+
+# WeChat DevTools auto-generated
+miniprogram_npm/

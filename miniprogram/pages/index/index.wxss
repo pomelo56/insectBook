@@ -1,124 +1,247 @@
 /* pages/index/index.wxss */
-/* 整体背景与容器样式 */
+
+/* 整体样式 */
 .container {
-  background-color: #f0f8f4;
-  padding: 20rpx;
-  min-height: calc(100vh - 90rpx);
-  text-align: left;
+  background-color: #f0f9f2;
+  /* min-height: 100vh;*/
+  height: 100%;
+  padding: 0;
+  position: relative;
+  padding-bottom: 30rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* 发现进度区域 */
-.discovery-progress {
+/* 头部区域 */
+.header {
+  padding: 60rpx 40rpx 30rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.header-title {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+}
+
+/* 发现进度与勋章整合区域 */
+.discovery-badges-section {
   background: white;
+  margin: 30rpx 30rpx;
   border-radius: 20rpx;
   padding: 30rpx;
+  box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.05);
+  width: 85%;
+}
+
+/* 发现进度部分 */
+.progress-container {
   margin-bottom: 30rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+  padding-bottom: 30rpx;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.progress-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20rpx;
+.progress-info {
+  text-align: center;
+  margin-top: 20rpx;
 }
 
-.progress-title {
-  font-size: 36rpx;
+.progress-text {
+  font-size: 32rpx;
   font-weight: bold;
-  color: #4CAF50;
+  color: #2a9d8f;
+  margin-bottom: 10rpx;
 }
 
 .progress-bar {
-  height: 20rpx;
-  background-color: #e0e0e0;
-  border-radius: 10rpx;
+  height: 12rpx;
+  background-color: #e9f5f2;
+  border-radius: 6rpx;
   overflow: hidden;
-  margin-bottom: 20rpx;
 }
 
 .progress-fill {
   height: 100%;
-  background-color: #4CAF50;
-  border-radius: 10rpx;
-  transition: width 0.3s ease;
+  background-color: #2a9d8f;
+  border-radius: 6rpx;
+  transition: width 0.5s ease;
 }
 
-.progress-text {
-  font-size: 28rpx;
+.progress-message {
+  font-size: 26rpx;
+  color: #666;
+  margin-top: 10rpx;
+  text-align: center;
+}
+
+/* 当前勋章展示部分 */
+.badges-entry {
+  transition: all 0.3s ease;
+  border-radius: 15rpx;
+  padding: 15rpx;
+}
+
+.badges-entry:active {
+  background-color: #f8f9fa;
+  transform: scale(0.98);
+}
+
+/* 当前勋章图标样式 */
+.current-badge-icon {
+  width: 80rpx;
+  height: 80rpx;
+  background-color: #f8f9fa;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* 等级文本样式 */
+.badge-level {
+  position: absolute;
+  bottom: -5rpx;
+  right: -5rpx;
+  background-color: #ff6b6b;
+  color: white;
+  font-size: 20rpx;
+  font-weight: bold;
+  padding: 4rpx 10rpx;
+  border-radius: 15rpx;
+  border: 2rpx solid white;
+  min-width: 30rpx;
+  text-align: center;
+}
+
+
+
+.badges-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.badges-icon {
+  width: 80rpx;
+  height: 80rpx;
+  background-color: #f8f9fa;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-image {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.badges-info {
+  flex: 1;
+  margin-left: 20rpx;
+}
+
+.badges-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #2a9d8f;
+  margin-bottom: 8rpx;
+}
+
+.badges-subtitle {
+  font-size: 24rpx;
   color: #666;
 }
 
-/* 昆虫收藏区域 */
-.insects-collection {
-  margin-bottom: 30rpx;
-  text-align: left;
+.badges-arrow {
+  width: 24rpx;
+  height: 24rpx;
 }
 
-.collection-header {
-  margin-bottom: 30rpx;
+.arrow-image {
+  width: 100%;
+  height: 100%;
+  transform: rotate(0deg);
 }
 
-.collection-title {
-  font-size: 32rpx;
+/* 我的昆虫收藏区域 */
+.discovery-section {
+  background: white;
+  margin: 15rpx 30rpx 30rpx;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.05);
+  width: 85%;
+}
+
+.section-header {
+  margin-bottom: 30rpx;
+  padding: 0 10rpx;
+}
+
+.section-title {
+  font-size: 36rpx;
   font-weight: bold;
-  color: #4CAF50;
-  text-align: left;
+  color: #2a9d8f;
 }
-
-/* 网格布局容器 - 3列布局，左对齐 */
+/* 昆虫网格 - 三列布局 */
 .insects-grid {
   display: flex;
   flex-wrap: wrap;
-  padding: 0;
-  justify-content: flex-start;
-  margin: 0 -12rpx;
-  text-align: left;
+  margin: 0 -10rpx;
+  padding: 0 10rpx;
 }
 
-/* 昆虫卡片样式 - 宽度根据屏幕自适应3列 */
 .insect-item {
-  position: relative;
-  width: calc(33.333% - 24rpx);
-  min-width: 200rpx;
-  margin: 0 12rpx 24rpx;
-  box-sizing: border-box;
+  width: calc(33.333% - 20rpx);
+  margin: 0 10rpx 30rpx;
 }
 
 .insect-card {
   position: relative;
   background: white;
-  border-radius: 20rpx;
+  border-radius: 16rpx;
   padding: 0;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.05);
   overflow: hidden;
-  width: 100%;
+  transition: all 0.3s ease;
+  border: 1px solid #e9f5f2;
 }
 
-/* 新发现标签 - 绿色背景 */
+.insect-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 新发现标签 */
 .new-badge {
   position: absolute;
-  top: 16rpx;
-  left: 16rpx;
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 50%;
-  background-color: #4CAF50;
+  top: 15rpx;
+  left: 15rpx;
+  background-color: #4ade80;
   color: white;
-  font-size: 28rpx;
+  font-size: 20rpx;
   font-weight: bold;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
+  z-index: 2;
 }
 
-/* 昆虫图片 - 强制正方形比例 */
+/* 昆虫图片 */
 .insect-image-wrapper {
   width: 100%;
-  padding-bottom: 100%;
+  height: 0;
+  padding-bottom: 100%; /* 保持1:1比例 */
   position: relative;
-  background-color: #f0f8f4;
+  background: #f8f9fa;
+  border-radius: 16rpx 16rpx 0 0;
 }
 
 .insect-image {
@@ -128,16 +251,89 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
-/* 昆虫名称 - 绿色文字 */
+.insect-card:active .insect-image {
+  transform: scale(1.05);
+}
+
+/* 昆虫名称 */
 .insect-name {
-  font-size: 30rpx;
-  padding: 16rpx 0;
+  font-size: 28rpx;
   font-weight: 500;
-  color: #4CAF50;
+  color: #333;
   text-align: center;
-  width: 100%;
+  padding: 15rpx 10rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 冷知识区域 - 使用与收藏区域相同的样式 */
+.cold-knowledge-section {
+  background: white;
+  margin: 15rpx 30rpx 30rpx;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.05);
+  width: 85%;
+}
+
+.section-header {
+  padding: 10rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #2a9d8f;
+  display: block;
+}
+
+.knowledge-content-wrapper {
+  padding: 0rpx 30rpx 0rpx 10rpx;
+}
+
+.knowledge-text {
+  font-size: 26rpx;
+  color: #333;
+  line-height: 42rpx;
+  word-wrap: break-word;
+  white-space: normal;
+  display: block;
+  text-align: left;
+  opacity: 0;
+  animation: fadeIn 0.5s ease-in-out forwards;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-5rpx);
+  }
+}
+
+/* 淡出动画类 */
+.fade-out {
+  animation: fadeOut 0.5s ease-in-out forwards;
 }
 
 /* 空状态样式 */
@@ -146,57 +342,209 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-top: 120rpx;
+  padding: 120rpx 40rpx;
   text-align: center;
 }
 
 .empty-image {
-  width: 320rpx;
-  height: 320rpx;
-  opacity: 0.7;
-  margin-bottom: 36rpx;
+  width: 240rpx;
+  height: 240rpx;
+  opacity: 0.6;
+  margin-bottom: 40rpx;
 }
 
 .empty-text {
-  font-size: 36rpx;
+  font-size: 32rpx;
   color: #666;
-  margin-bottom: 20rpx;
+  margin-bottom: 16rpx;
+  font-weight: 500;
 }
 
 .empty-subtext {
-  font-size: 30rpx;
+  font-size: 26rpx;
   color: #999;
-  margin-bottom: 48rpx;
+  margin-bottom: 50rpx;
 }
 
-/* 主按钮样式 */
 .primary-btn {
-  background-color: #4CAF50;
+  background-color: #2a9d8f;
   color: white;
-  border-radius: 8rpx;
-  padding: 16rpx 32rpx;
-  font-size: 32rpx;
   border: none;
+  border-radius: 50rpx;
+  padding: 24rpx 60rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  box-shadow: 0 4rpx 15rpx rgba(42, 157, 143, 0.3);
 }
 
 .primary-btn:active {
-  background-color: #45a049;
+  transform: translateY(2rpx);
+  box-shadow: 0 2rpx 8rpx rgba(42, 157, 143, 0.3);
 }
 
-/* 滚动条样式优化 */
-::-webkit-scrollbar {
-  display: none;
+
+
+/* OpenID获取入口样式（仅管理员可见） */
+.openid-entry {
+  position: fixed;
+  bottom: 140rpx;
+  right: 20rpx;
+  width: 100rpx;
+  height: 100rpx;
+  background-color: rgba(255, 152, 0, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24rpx;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+  box-shadow: 0 4rpx 15rpx rgba(255, 152, 0, 0.3);
+  z-index: 998;
+}
+
+.openid-entry:active {
+  transform: scale(0.95);
+  opacity: 1;
+  box-shadow: 0 2rpx 10rpx rgba(255, 152, 0, 0.5);
+}
+
+.openid-text {
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.2;
 }
 
 /* 响应式调整 */
-@media (max-width: 600rpx) {
-  .insects-grid {
-    margin: 0 -10rpx;
+  @media (max-width: 600rpx) {
+    .discovery-badges-section {
+      margin: 20rpx 20rpx;
+      padding: 25rpx;
+      width: 90%;
+    }
+    
+    .progress-container {
+      margin-bottom: 20rpx;
+      padding-bottom: 20rpx;
+    }
+    
+    .current-badge-icon {
+      width: 70rpx;
+      height: 70rpx;
+    }
+    
+    .badge-image {
+      width: 42rpx;
+      height: 42rpx;
+    }
+    
+    .badge-level {
+      font-size: 18rpx;
+      padding: 3rpx 8rpx;
+      border-radius: 12rpx;
+    }
+    
+    .badges-title {
+      font-size: 28rpx;
+    }
+    
+    .badges-subtitle {
+      font-size: 22rpx;
+    }
+    
+    .badges-entry {
+      padding: 10rpx;
+    }
+    
+    .discovery-section {
+      padding: 0 20rpx;
+      margin: 15rpx 20rpx 30rpx;
+      width: 90%;
+    }
+    
+    .insects-grid {
+      margin: 0 -8rpx;
+      padding: 0 8rpx;
+    }
+    
+    .insect-item {
+      width: calc(33.333% - 16rpx);
+      margin: 0 8rpx 25rpx;
+    }
+    
+    .progress-text {
+      font-size: 28rpx;
+    }
+    
+    .section-title {
+      font-size: 32rpx;
+    }
+    
+    .progress-message {
+      font-size: 24rpx;
+    }
+  }
+
+/* 管理入口样式 */
+.admin-tools-entry {
+  position: fixed;
+  bottom: 40rpx;
+  right: 30rpx;
+  width: 100rpx;
+  height: 100rpx;
+  background-color: #f0f0f0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+  opacity: 0.8;
+  transition: all 0.3s ease;
+  z-index: 999;
+}
+
+/* 管理员模式下的特殊样式 */
+.admin-tools-entry.admin-mode {
+  background-color: rgba(76, 175, 80, 0.9);
+  box-shadow: 0 4rpx 15rpx rgba(76, 175, 80, 0.3);
+}
+
+.admin-tools-entry:active {
+  transform: scale(0.95);
+  opacity: 1;
+}
+
+/* 管理员模式下的激活样式 */
+.admin-tools-entry.admin-mode:active {
+  box-shadow: 0 2rpx 10rpx rgba(76, 175, 80, 0.5);
+}
+
+.admin-tools-text {
+  font-size: 24rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 管理员模式下的文本样式 */
+.admin-tools-entry.admin-mode .admin-tools-text {
+  color: white;
+  font-weight: bold;
+}
+
+/* 适配不同设备 */
+@media (min-width: 768px) {
+  .admin-tools-entry {
+    width: 80rpx;
+    height: 80rpx;
   }
   
-  .insect-item {
-    width: calc(33.333% - 20rpx);
-    min-width: 160rpx;
-    margin: 0 10rpx 20rpx;
+  .admin-tools-text {
+    font-size: 20rpx;
   }
+}
+
+/* 滚动条隐藏 */
+::-webkit-scrollbar {
+  display: none;
 }

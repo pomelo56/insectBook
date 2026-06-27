@@ -1,0 +1,41 @@
+<!-- pages/badges/badges.wxml -->
+<view class="container">
+  <!-- 页面标题 -->
+  <!-- view class="page-title">勋章收集</view-->
+
+  <!-- 加载状态 -->
+  <view wx:if="{{isLoading}}" class="loading-container">
+    <text class="loading-text">正在加载勋章配置...</text>
+  </view>
+
+  <!-- 等级体系 -->
+  <view wx:if="{{!isLoading}}" class="levels-section">
+    <!-- 等级卡片列表 -->
+    <view class="levels-grid">
+      <view 
+        wx:for="{{levels}}" 
+        wx:key="level" 
+        class="level-card {{item.isCompleted ? 'completed' : ''}} {{item.isCurrentLevel ? 'current' : ''}} level-{{index + 1}}"
+      >
+        <view class="level-badge" wx:if="{{item.isCurrentLevel}}">
+          <text class="badge-text">当前等级</text>
+        </view>
+        <view class="level-icon">
+          <image src="{{item.icon}}" mode="aspectFit"></image>
+        </view>
+        <text class="level-name">{{item.levelName ? item.levelName + ' ' : ''}}{{item.name}}</text>
+        <text class="level-status">{{item.description}}</text>
+        <view class="level-progress-bar">
+          <view class="level-progress-fill" style="width: {{item.progressPercentage}}%;"></view>
+        </view>
+        <text class="level-progress-text">{{item.currentCount}}/{{item.targetCount}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 发现昆虫按钮 -->
+  <view class="camera-btn" bindtap="onCameraTap">
+    <image src="/images/icons/camera.svg" class="camera-icon"></image>
+    <text class="camera-text">发现昆虫</text>
+  </view>
+</view>

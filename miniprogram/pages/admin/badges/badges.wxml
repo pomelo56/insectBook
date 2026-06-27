@@ -1,0 +1,131 @@
+<!-- miniprogram/pages/admin/badges/badges.wxml -->
+<view class="badges-container">
+  <view class="header">
+    <text class="page-title">勋章管理</text>
+    <button type="primary" bindtap="addBadge" class="add-button">添加勋章</button>
+  </view>
+
+  <view class="badges-list">
+    <view wx:if="{{loading}}" class="loading">
+      <image src="/images/icons/loading.gif" class="loading-icon"></image>
+      <text>加载中...</text>
+    </view>
+    
+    <view wx:elif="{{badges.length === 0}}" class="empty">
+      <image src="/images/icons/empty.png" class="empty-icon"></image>
+      <text>暂无勋章数据</text>
+    </view>
+    
+    <view 
+      wx:for="{{badges}}" 
+      wx:key="id"
+      class="badge-item"
+    >
+      <view class="badge-content">
+        <image src="{{item.icon || '/images/badge_default.png'}}" class="badge-icon"></image>
+        
+        <view class="badge-info">
+          <view class="badge-name">{{item.name}}</view>
+          <view class="badge-requirement">需要收集 {{item.requiredCount}} 只昆虫</view>
+          <view class="badge-description">{{item.description || '无描述'}}</view>
+        </view>
+      </view>
+      
+      <view class="action-buttons">
+        <button 
+          type="default" 
+          size="mini" 
+          bindtap="openEditModal"
+          data-id="{{item.id}}"
+          class="edit-button"
+        >
+          编辑
+        </button>
+        <button 
+          type="warn" 
+          size="mini" 
+          bindtap="deleteBadge"
+          data-id="{{item.id}}"
+          class="delete-button"
+        >
+          删除
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 编辑勋章弹窗 -->
+  <view wx:if="{{showEditModal}}" class="modal-overlay" bindtap="closeEditModal"></view>
+  <view wx:if="{{showEditModal}}" class="edit-modal">
+    <view class="modal-header">
+      <text class="modal-title">{{editingBadge.id ? '编辑勋章' : '添加勋章'}}</text>
+      <text class="close-btn" bindtap="closeEditModal">×</text>
+    </view>
+    
+    <view class="modal-content">
+      <view class="form-item">
+        <text class="label">勋章名称 *</text>
+        <input 
+          type="text" 
+          placeholder="请输入勋章名称" 
+          value="{{editingBadge.name}}"
+          data-field="name"
+          bindinput="onInputChange"
+          class="input"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">所需昆虫数量 *</text>
+        <input 
+          type="number" 
+          placeholder="请输入所需昆虫数量" 
+          value="{{editingBadge.requiredCount}}"
+          data-field="requiredCount"
+          bindinput="onInputChange"
+          class="input"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">勋章图标</text>
+        <view class="icon-upload">
+          <image 
+            src="{{editingBadge.icon || '/images/badge_default.png'}}" 
+            class="preview-icon"
+          ></image>
+          <button type="default" size="mini" bindtap="uploadIcon">上传图标</button>
+        </view>
+      </view>
+      
+      <view class="form-item">
+        <text class="label">勋章等级</text>
+        <input 
+          type="text" 
+          placeholder="请输入勋章等级（如：青铜、白银、黄金）" 
+          value="{{editingBadge.level}}"
+          data-field="level"
+          bindinput="onInputChange"
+          class="input"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">勋章描述</text>
+        <textarea 
+          placeholder="请输入勋章描述（可选）" 
+          value="{{editingBadge.description}}"
+          data-field="description"
+          bindinput="onInputChange"
+          class="textarea"
+          auto-height
+        ></textarea>
+      </view>
+    </view>
+    
+    <view class="modal-footer">
+      <button type="default" bindtap="closeEditModal">取消</button>
+      <button type="primary" bindtap="saveBadge">保存</button>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,14 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 鸟的身体 -->
+  <path d="M60,40 Q65,30 60,20 Q50,15 40,20 Q35,30 40,40 Q35,50 40,60 Q50,65 60,60 Q65,50 60,40 Z" fill="#FFB6C1" stroke="#FF69B4" stroke-width="1"/>
+  <!-- 鸟的头部 -->
+  <circle cx="70" cy="35" r="8" fill="#FFB6C1" stroke="#FF69B4" stroke-width="1"/>
+  <!-- 眼睛 -->
+  <circle cx="72" cy="33" r="1.5" fill="#000000"/>
+  <!-- 喙 -->
+  <path d="M78,35 L85,33 L78,37 Z" fill="#FFD700"/>
+  <!-- 翅膀 -->
+  <path d="M55,40 Q45,45 55,50 Z" fill="#FFA07A" stroke="#FF6347" stroke-width="0.5"/>
+  <!-- 尾巴 -->
+  <path d="M40,40 L30,35 L35,40 L30,45 L40,40 Z" fill="#FFA07A" stroke="#FF6347" stroke-width="0.5"/>
+</svg>

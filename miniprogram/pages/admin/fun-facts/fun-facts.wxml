@@ -1,0 +1,123 @@
+<!-- miniprogram/pages/admin/fun-facts/fun-facts.wxml -->
+<view class="fun-facts-container">
+  <view class="header">
+    <view class="search-bar">
+      <input 
+        type="text" 
+        placeholder="搜索冷知识内容" 
+        value="{{searchKey}}"
+        bindinput="onSearch"
+        class="search-input"
+      />
+      <image src="/images/icons/search.png" class="search-icon"></image>
+    </view>
+    <button type="primary" bindtap="addFunFact" class="add-button">添加冷知识</button>
+  </view>
+
+  <view class="fun-facts-list">
+    <view wx:if="{{loading && funFacts.length === 0}}" class="loading">
+      <image src="/images/icons/loading.gif" class="loading-icon"></image>
+      <text>加载中...</text>
+    </view>
+    
+    <view wx:elif="{{funFacts.length === 0}}" class="empty">
+      <image src="/images/icons/empty.png" class="empty-icon"></image>
+      <text>暂无冷知识数据</text>
+    </view>
+    
+    <view 
+      wx:for="{{funFacts}}" 
+      wx:key="id"
+      class="fun-fact-item"
+    >
+      <view class="fact-content">
+        <view class="fact-main">
+          <text class="fact-text">{{item.content}}</text>
+        </view>
+        
+        <view class="fact-meta">
+          <text wx:if="{{item.insectName}}" class="insect-name">相关昆虫: {{item.insectName}}</text>
+          <text class="display-order">排序: {{item.displayOrder}}</text>
+          <text class="update-time">更新时间: {{item.updateTime}}</text>
+        </view>
+      </view>
+      
+      <view class="action-buttons">
+        <button 
+          type="default" 
+          size="mini" 
+          bindtap="openEditModal"
+          data-id="{{item.id}}"
+          class="edit-button"
+        >
+          编辑
+        </button>
+        <button 
+          type="warn" 
+          size="mini" 
+          bindtap="deleteFunFact"
+          data-id="{{item.id}}"
+          class="delete-button"
+        >
+          删除
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading && funFacts.length > 0}}" class="load-more">
+    <text>加载更多...</text>
+  </view>
+
+  <!-- 编辑冷知识弹窗 -->
+  <view wx:if="{{showEditModal}}" class="modal-overlay" bindtap="closeEditModal"></view>
+  <view wx:if="{{showEditModal}}" class="edit-modal">
+    <view class="modal-header">
+      <text class="modal-title">{{editingFact.id ? '编辑冷知识' : '添加冷知识'}}</text>
+      <text class="close-btn" bindtap="closeEditModal">×</text>
+    </view>
+    
+    <view class="modal-content">
+      <view class="form-item">
+        <text class="label">冷知识内容 *</text>
+        <textarea 
+          placeholder="请输入冷知识内容" 
+          value="{{editingFact.content}}"
+          data-field="content"
+          bindinput="onInputChange"
+          class="textarea"
+          auto-height
+        ></textarea>
+      </view>
+      
+      <view class="form-item">
+        <text class="label">相关昆虫（可选）</text>
+        <input 
+          type="text" 
+          placeholder="请输入相关昆虫名称" 
+          value="{{editingFact.insectName}}"
+          data-field="insectName"
+          bindinput="onInputChange"
+          class="input"
+        />
+      </view>
+      
+      <view class="form-item">
+        <text class="label">显示顺序</text>
+        <input 
+          type="number" 
+          placeholder="请输入显示顺序" 
+          value="{{editingFact.displayOrder}}"
+          data-field="displayOrder"
+          bindinput="onInputChange"
+          class="input"
+        />
+      </view>
+    </view>
+    
+    <view class="modal-footer">
+      <button type="default" bindtap="closeEditModal">取消</button>
+      <button type="primary" bindtap="saveFunFact">保存</button>
+    </view>
+  </view>
+</view>

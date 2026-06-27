@@ -1,0 +1,111 @@
+/* miniprogram/pages/admin/index.wxss */
+.admin-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 30rpx;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 60rpx;
+}
+
+.title {
+  font-size: 50rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.tips {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.menu-container {
+  padding: 20rpx;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30rpx;
+}
+
+.menu-item {
+  background-color: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx 20rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.menu-item:active {
+  transform: scale(0.98);
+}
+
+.icon-container {
+  width: 140rpx;
+  height: 140rpx;
+  margin: 0 auto 20rpx;
+  background-color: #f0f9ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-icon {
+  width: 80rpx;
+  height: 80rpx;
+}
+
+.menu-name {
+  font-size: 32rpx;
+  color: #333;
+}
+
+.permission-denied {
+  text-align: center;
+  margin-top: 200rpx;
+  padding: 60rpx;
+  background-color: #fff;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.lock-icon {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 40rpx;
+}
+
+.denied-text {
+  font-size: 32rpx;
+  color: #666;
+  display: block;
+  margin-bottom: 40rpx;
+  line-height: 1.5;
+}
+
+.permission-denied button {
+  width: 400rpx;
+  background-color: #1989fa;
+}
+
+/* 适配不同尺寸屏幕 */
+@media (min-width: 768px) {
+  .menu-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.menu-icon {
+  /* 移除动画，避免图片闪烁 */
+}
+
+.menu-item:nth-child(2) { animation-delay: 0.2s; }
+.menu-item:nth-child(3) { animation-delay: 0.4s; }
+.menu-item:nth-child(4) { animation-delay: 0.6s; }

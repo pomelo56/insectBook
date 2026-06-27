@@ -1,0 +1,14 @@
+{
+  "name": "fillRealData",
+  "version": "1.0.0",
+  "description": "使用真实昆虫数据填充数据库云函数",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "~2.4.0"
+  }
+}
