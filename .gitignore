@@ -21,3 +21,6 @@ deployment_logs/
 
 # WeChat DevTools auto-generated
 miniprogram_npm/
+
+# External skills repo (embedded git)
+skills/
