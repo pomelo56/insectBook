@@ -16,7 +16,7 @@
 
 ## 团队角色分析
 - 4角色(PM/架构师/工程师/QA)覆盖6能力域中4个：需求✓、架构✓、代码✓、测试✓
-- 2个缺口用skills/knowledge补充，不加新角色：wx-miniprogram skill + cloud-devops skill + insect-data-schema knowledge + wx-arch-ADR knowledge
+- 2个缺口用skills/knowledge补充，不加新角色：wx-miniprogram skill + cloud-devops skill + design-system skill + insect-data-schema knowledge + wx-arch-ADR knowledge
 - 原因：general-purpose agent无专用SOP和关卡，加人反拖慢
 
 ## GUI负责人
@@ -24,9 +24,9 @@
 - 三层分工：PM定义交互流→架构师定义组件拆分→工程师落地实现
 - 不需独立设计师：WeChat Design规范强约束、WXML/WXSS即GUI、组件化后样式自然拆分
 - 视觉质量保证：L3层补充design-system skill（颜色/间距/字体/动效token）
-- 识别8个vibe coding症状：God Object(index.js 948行/camera.js 1189行)、补丁文档泛滥(12个MD)、云函数膨胀(23个)、Callback Hell(3层超时)、硬编码数据、零测试覆盖、重构文档空转(ID重构方案未执行)、关注点混杂
-- 提出Loop Engineering模型：Loop1抽离(拆模块)、Loop2规范化(统一架构)、Loop3闭环(测试+CI)
-- 重构方案A增量重构(推荐)、方案B完全重写(SOP标准流程)
-- 工程计划v1.1：新增Phase -1安全网(Git基线+DB快照+remote+回滚SOP)
-- 回滚能力3层：L0全工程回退、L1单Loop回退、L2单文件回退
-- 回滚SOP文档 docs/ROLLBACK-SOP.md 已创建
+
+## 重构执行进度
+- Phase 0 L5 已完成✓：Git baseline(6e532e8)+cleanup(6951627)+简化计划(9378615)
+- 回滚机制：Git baseline commit即可，`git checkout 6e532e8` 随时回退
+- 已删除：9补丁MD+6补丁SH+2冗余docs(ROLLBACK-SOP/PREPARATION-CHECKLIST)
+- 下一步：Phase 0 L1 — 创建skills和knowledge
