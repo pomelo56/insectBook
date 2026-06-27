@@ -22,5 +22,5 @@ deployment_logs/
 # WeChat DevTools auto-generated
 miniprogram_npm/
 
-# External skills repo (embedded git)
-skills/
+# External skills repo (root-level, embedded git — not .workbuddy/skills/)
+/skills/
