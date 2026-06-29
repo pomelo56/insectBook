@@ -1,6 +1,10 @@
 // pages/index/index.js
 const app = getApp();
-// 统一封装：关键词 → 百度直链
+
+// Service 层
+const insectService = require('../../services/insectService');
+
+// Utils 层
 import { getBaiduImageUrl, clearImageCache } from '../../utils/imageHelper.js';
 // 引入昆虫冷知识数据（暂时保留本地数据作为备用）
 import { insectColdKnowledge, clothingTips, observationTips } from '../../utils/insectColdKnowledge.js';
@@ -49,7 +53,7 @@ Page({
       this.updateUserLevelWithConfig(this.data.collectedCount, config);
     });
     
-    this.loadUserData();
+    this._loadInsectData();
     this.initColdKnowledge();
     // 启动自动切换定时器
     this.startKnowledgeTimer();
@@ -248,7 +252,7 @@ Page({
       
       // 强制刷新：每次 onShow 都加载最新数据
       console.log('页面显示，开始加载最新数据');
-      await this.loadUserData();
+      await this._loadInsectData();
       
       // 重置刷新标志
       app.globalData.needRefreshHomePage = false;
@@ -264,88 +268,44 @@ Page({
     }
   },
   
-  // 尝试从缓存恢复数据 - 增强版
+  // 尝试从缓存恢复数据 — 委托给 insectService
   tryRecoverFromCache() {
     try {
-      // 初始化基础数据，确保页面至少能显示基本结构
-      const baseData = {
-        recentInsects: [],
-        collectedCount: 0,
-        totalCount: 30,
-        progressPercent: 0,
-        currentPage: 1,
-        hasMoreData: true
-      };
-      
-      // 尝试获取缓存数据
-      let cachedInsects, cachedCount, cachedTotal;
-      try {
-        cachedInsects = wx.getStorageSync('recent_insects') || [];
-        cachedCount = wx.getStorageSync('collectedCount') || 0;
-        cachedTotal = wx.getStorageSync('totalCount') || 30;
-      } catch (storageError) {
-        console.error('缓存读取失败，使用默认值:', storageError);
-        // 缓存读取失败时，使用空数组和默认值
-        cachedInsects = [];
-        cachedCount = 0;
-        cachedTotal = 30;
-      }
-      
-      // 确保缓存数据类型正确
-      if (!Array.isArray(cachedInsects)) {
-        console.error('缓存昆虫数据类型错误，重置为空数组');
-        cachedInsects = [];
-      }
-      
-      // 计算实际收集数量
-      const actualCount = cachedInsects.length;
-      
-      // 更新数据，确保页面显示
-      if (actualCount > 0) {
-        console.log('从缓存恢复数据，共', actualCount, '条记录');
+      const cacheData = insectService.recoverInsectDataFromCache();
+      if (!cacheData) {
         this.setData({
-          ...baseData,
-          recentInsects: cachedInsects,
-          collectedCount: actualCount,
-          totalCount: cachedTotal,
-          progressPercent: actualCount && cachedTotal ? Math.max(1, Math.round((actualCount / cachedTotal) * 100)) : 0
+          recentInsects: [], collectedCount: 0, totalCount: 30,
+          progressPercent: 0, currentPage: 1, hasMoreData: true
         });
-        
-        // 尝试更新用户等级，但不影响页面显示
+        return false;
+      }
+
+      this.setData(cacheData);
+
+      if (cacheData.recentInsects && cacheData.recentInsects.length > 0) {
+        console.log('从缓存恢复数据，共', cacheData.collectedCount, '条记录');
         try {
           this.updateUserLevel(false);
         } catch (levelError) {
           console.error('更新用户等级时出错，但不影响数据显示:', levelError);
         }
-      } else {
-        console.log('缓存数据为空，设置空状态');
-        // 显示空状态，确保页面结构正确
-        this.setData(baseData);
+        return true;
       }
-      
+
+      console.log('缓存数据为空，设置空状态');
       return true;
     } catch (error) {
       console.error('tryRecoverFromCache严重错误，强制设置空状态:', error);
-      // 最后兜底，确保页面至少有基本结构
       try {
         this.setData({
-          recentInsects: [],
-          collectedCount: 0,
-          totalCount: 30,
-          progressPercent: 0,
-          currentPage: 1,
-          hasMoreData: true
+          recentInsects: [], collectedCount: 0, totalCount: 30,
+          progressPercent: 0, currentPage: 1, hasMoreData: true
         });
       } catch (setDataError) {
         console.error('设置基础数据失败，页面可能无法正常显示:', setDataError);
       }
       return false;
     }
-  },
-  
-  // 计算进度百分比
-  calculateProgress(collected, total) {
-    return collected && total > 0 ? Math.max(1, Math.round((collected / total) * 100)) : 0;
   },
   
   onReady() {
@@ -367,7 +327,7 @@ Page({
     console.log('触发加载更多');
     if (this.data.hasMoreData) {
       wx.showLoading({ title: '加载中...' });
-      this.loadUserData(true).finally(() => {
+      this._loadInsectData(true).finally(() => {
         wx.hideLoading();
       });
     } else {
@@ -379,22 +339,17 @@ Page({
   },
 
   /* ---------- 业务函数 ---------- */
-  async loadUserData(isLoadMore = false) {
+  // 加载昆虫数据 — 委托给 insectService，本方法只做防重入 + UI 更新
+  async _loadInsectData(isLoadMore = false) {
     console.log('首页昆虫收藏数据加载开始');
-    
-    // 防止重复加载
     if (this._isLoading && !isLoadMore) {
       console.log('数据加载中，跳过重复请求');
       return;
     }
-    
+
     this._isLoading = true;
-    
+
     try {
-      const db = wx.cloud.database();
-      const _ = db.command;
-      
-      // 确保openid存在，否则等待获取
       if (!app.globalData.openid) {
         console.log('openid未获取，等待并重试');
         await new Promise(resolve => setTimeout(resolve, 300));
@@ -404,147 +359,38 @@ Page({
           return;
         }
       }
-      
-      // 1. 获取昆虫总数
-      let totalCount = 30; // 默认值
-      try {
-        const totalRes = await db.collection('insects').count();
-        totalCount = totalRes.total || 30;
-      } catch (e) {
-        console.error('获取昆虫总数失败，使用默认值:', e);
-      }
-      
-      // 2. 获取用户昆虫记录
-      let recentRes = { data: [] };
-      try {
-        const skipCount = isLoadMore ? (this.data.currentPage - 1) * this.data.pageSize : 0;
-        recentRes = await db.collection('user_insects')
-          .where({ _openid: app.globalData.openid })
-          .orderBy('createdAt', 'desc')
-          .skip(skipCount)
-          .limit(this.data.pageSize)
-          .get();
-      } catch (e) {
-        console.error('获取用户昆虫记录失败:', e);
-        // 失败时使用缓存数据
+
+      const result = await insectService.loadInsectData({
+        openid: app.globalData.openid,
+        isLoadMore,
+        currentPage: this.data.currentPage,
+        pageSize: this.data.pageSize,
+        recentInsects: this.data.recentInsects
+      });
+
+      if (result.error) {
+        console.error('加载昆虫数据失败，尝试缓存恢复:', result.error);
         this.tryRecoverFromCache();
         return;
       }
-      
-      const records = recentRes.data || [];
-      const hasMore = records.length >= this.data.pageSize;
-      
-      // 无数据时的处理
-      if (records.length === 0) {
-        this.setData({ 
-          recentInsects: isLoadMore ? this.data.recentInsects : [],
-          hasMoreData: false,
-          totalCount: totalCount,
-          collectedCount: isLoadMore ? this.data.collectedCount : 0,
-          progressPercent: 0
-        });
-        this.updateUserLevel();
-        return;
-      }
-      
-      // 3. 提取昆虫ID并去重
-      const insectIds = [...new Set(records.map(r => r.insectId).filter(id => id))];
-      
-      // 4. 获取昆虫详情
-      let insectDetails = {};
-      if (insectIds.length > 0) {
-        try {
-          const detailRes = await db.collection('insects')
-            .where({ _id: _.in(insectIds) })
-            .get();
-          detailRes.data.forEach(insect => {
-            insectDetails[insect._id] = insect;
-          });
-        } catch (e) {
-          console.error('获取昆虫详情失败:', e);
-        }
-      }
-      
-      // 5. 处理昆虫数据
-      const processedRecords = [];
-      const insectMap = new Map(); // 用于去重
-      
-      // 先添加已有数据（用于加载更多）
-      if (isLoadMore && this.data.recentInsects && this.data.recentInsects.length > 0) {
-        this.data.recentInsects.forEach(insect => {
-          insectMap.set(insect.id, insect);
-        });
-      }
-      
-      // 处理新记录
-      records.forEach(item => {
-        const insectId = item.insectId;
-        if (!insectId) return;
-        
-        const detail = insectDetails[insectId] || {};
-        const createdAt = item.createdAt || new Date().toISOString();
-        const isNew = Date.now() - new Date(createdAt).getTime() < 24 * 3600 * 1000;
-        const name = item.name || detail.name || '未知昆虫';
-        
-        // 构建昆虫数据对象
-        const insectData = {
-          id: insectId,
-          name: name,
-          foundCount: item.foundCount || 1,
-          imageUrl: item.userImageUrl || detail.userImageUrl || '/images/empty_insect.png',
-          userImageUrl: item.userImageUrl || detail.userImageUrl || '',
-          lastFoundTime: createdAt,
-          isNew: isNew,
-          _id: item._id
-        };
-        
-        // 去重逻辑：只保留最新的记录
-        if (!insectMap.has(insectId) || 
-            new Date(createdAt).getTime() > new Date(insectMap.get(insectId).lastFoundTime).getTime()) {
-          insectMap.set(insectId, insectData);
-        }
-      });
-      
-      // 转换为数组并排序
-      const sortedInsects = Array.from(insectMap.values()).sort((a, b) => {
-        return new Date(b.lastFoundTime).getTime() - new Date(a.lastFoundTime).getTime();
-      });
-      
-      // 限制数量（分页）
-      const displayInsects = isLoadMore ? sortedInsects : sortedInsects.slice(0, this.data.pageSize);
-      const collectedCount = sortedInsects.length;
-      const progressPercent = collectedCount && totalCount ? 
-        Math.max(1, Math.round((collectedCount / totalCount) * 100)) : 0;
-      
-      // 更新页面数据
+
       this.setData({
-        recentInsects: displayInsects,
-        collectedCount: collectedCount,
-        totalCount: totalCount,
-        progressPercent: progressPercent,
+        recentInsects: result.records,
+        collectedCount: result.collectedCount,
+        totalCount: result.totalCount,
+        progressPercent: result.progressPercent,
         currentPage: isLoadMore ? this.data.currentPage + 1 : 1,
-        hasMoreData: hasMore
+        hasMoreData: result.hasMore
       });
-      
-      // 保存到缓存
-      try {
-        wx.setStorageSync('recent_insects', sortedInsects);
-        wx.setStorageSync('collectedCount', collectedCount);
-        wx.setStorageSync('totalCount', totalCount);
-      } catch (e) {
-        console.error('缓存保存失败:', e);
-      }
-      
-      // 更新用户等级
+
       this.updateUserLevel(true).catch(e => {
         console.error('更新等级失败但不影响显示:', e);
       });
-      
-      console.log('首页数据加载成功，共', collectedCount, '种昆虫');
-      
+
+      console.log('首页数据加载成功，共', result.collectedCount, '种昆虫');
+
     } catch (error) {
-      console.error('loadUserData严重错误:', error);
-      // 发生错误时尝试恢复缓存数据
+      console.error('_loadInsectData严重错误:', error);
       this.tryRecoverFromCache();
     } finally {
       this._isLoading = false;
@@ -814,7 +660,7 @@ Page({
               
               // 2. 立即更新收集数量和进度百分比
               const updatedCount = Math.max(0, this.data.collectedCount - 1);
-              const updatedProgress = this.calculateProgress(updatedCount, this.data.totalCount);
+              const updatedProgress = insectService.calculateProgress(updatedCount, this.data.totalCount);
               
               // 3. 更新UI显示 - 使用回调函数确保UI更新完成后再显示toast
               this.setData({
@@ -831,7 +677,7 @@ Page({
                 wx.removeStorageSync('cached_user_level');
                 
                 // 6. 重新加载完整数据以确保准确性
-                this.loadUserData();
+                this._loadInsectData();
                 
                 // 7. 显示删除成功提示
                 wx.showToast({ title: '删除成功' });
@@ -877,7 +723,7 @@ Page({
     this.clearAllCache();
     
     // 加载最新数据
-    this.loadUserData().finally(() => {
+    this._loadInsectData().finally(() => {
       // 无论加载成功与否，都停止下拉刷新动画
       wx.stopPullDownRefresh();
       console.log('下拉刷新完成');

@@ -26,7 +26,9 @@
 - 视觉质量保证：L3层补充design-system skill（颜色/间距/字体/动效token）
 
 ## 重构执行进度
-- Phase 0 L5 已完成✓：Git baseline(6e532e8)+cleanup(6951627)+简化计划(9378615)
-- 回滚机制：Git baseline commit即可，`git checkout 6e532e8` 随时回退
-- 已删除：9补丁MD+6补丁SH+2冗余docs(ROLLBACK-SOP/PREPARATION-CHECKLIST)
-- 下一步：Phase 0 L1 — 创建skills和knowledge
+- Phase 0 全部完成✓：L5(清理)+L1(5skills+2knowledge)+L2(ARCHITECTURE.md)+L3(CONVENTIONS.md)+L4(jest+wxMock)
+- 回滚机制：Git baseline commit `6e532e8`，`git checkout 6e532e8` 随时回退
+- 已删除：9补丁MD+6补丁SH+2冗余docs
+- 创建的skills：loop-engineering/wx-miniprogram/service-split/cloud-devops/design-system
+- 创建的knowledge：insect-data-schema/wx-architecture-decisions
+- 下一步：Phase 1 Loop 1-1 — 从index.js抽离insectService（需创建团队+派工程师）
