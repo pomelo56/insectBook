@@ -31,4 +31,5 @@
 - 已删除：9补丁MD+6补丁SH+2冗余docs
 - 创建的skills：loop-engineering/wx-miniprogram/service-split/cloud-devops/design-system
 - 创建的knowledge：insect-data-schema/wx-architecture-decisions
-- 下一步：Phase 1 Loop 1-1 — 从index.js抽离insectService（需创建团队+派工程师）
+- Phase 1 Loop 1-1 完成✓：从index.js(948→794行)抽离insectService(173行)+45单元测试(全部通过)
+- 下一步：Phase 1 Loop 1-2 — 抽离cacheService(统一缓存)或levelService(等级计算)
