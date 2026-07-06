@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>insectBook 任务面板</title>
+<style>
+:root {
+  --color-done: #2a9d8f;
+  --color-done-bg: #e8f5e9;
+  --color-backlog: #e76f51;
+  --color-backlog-bg: #fff3e0;
+  --color-qa: #7e57c2;
+  --color-qa-bg: #f3e5f5;
+  --color-p0: #d32f2f;
+  --color-p1: #f57c00;
+  --color-p2: #78909c;
+  --border: #e0e0e0;
+  --text: #333;
+  --text-secondary: #666;
+  --bg: #fafafa;
+  --card-bg: #fff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 24px; }
+h1 { font-size: 24px; margin-bottom: 4px; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 20px; }
+.stats { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.stat { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; border: 1px solid var(--border); background: var(--card-bg); }
+.stat.done { color: var(--color-done); }
+.stat.backlog { color: var(--color-backlog); }
+.stat.qa { color: var(--color-qa); }
+.board { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.column { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-height: 200px; }
+.column-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+.column-header .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.column-header .dot.done { background: var(--color-done); }
+.column-header .dot.backlog { background: var(--color-backlog); }
+.column-header .dot.qa { background: var(--color-qa); }
+.column-header h2 { font-size: 16px; }
+.column-header .count { font-size: 12px; color: var(--text-secondary); margin-left: auto; }
+.card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: default; transition: box-shadow 0.2s; }
+.card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.card-header .badge { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; color: #fff; }
+.card-header .badge.P0 { background: var(--color-p0); }
+.card-header .badge.P1 { background: var(--color-p1); }
+.card-header .badge.P2 { background: var(--color-p2); }
+.card-title { font-size: 14px; font-weight: 600; flex: 1; }
+.card-meta { font-size: 11px; color: var(--text-secondary); display: flex; gap: 12px; margin-bottom: 4px; }
+.card-notes { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.card-deps { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.card-deps span { background: #eee; padding: 1px 5px; border-radius: 3px; margin-right: 4px; }
+.progress-bar { width: 100%; height: 4px; background: #eee; border-radius: 2px; margin-top: 16px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--color-done); border-radius: 2px; transition: width 0.5s; }
+.phase-section { margin-bottom: 16px; }
+.phase-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px dashed var(--border); }
+.empty { text-align: center; color: #ccc; padding: 24px; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<h1>insectBook 重构任务面板</h1>
+<p class="subtitle">Phase 0 完成 · Phase 1 进行中 (Loop 1-1 ✓) · 总计 25 项 · <span id="done-count">0</span> 项已完成</p>
+
+<div class="stats" id="stats"></div>
+
+<div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
+
+<div class="board" id="board"></div>
+
+<script>
+async function load() {
+  const resp = await fetch('./TASKS.json');
+  const tasks = await resp.json();
+
+  const done = tasks.filter(t => t.status === 'done');
+  const backlog = tasks.filter(t => t.status === 'backlog');
+  const qaItems = tasks.filter(t => t.loop === 'QA-finding' && t.status === 'backlog');
+  const nonQaBacklog = backlog.filter(t => t.loop !== 'QA-finding');
+
+  // Stats
+  document.getElementById('stats').innerHTML = `
+    <div class="stat done">✅ 已完成 ${done.length}</div>
+    <div class="stat backlog">📋 待开发 ${nonQaBacklog.length}</div>
+    <div class="stat qa">🔍 QA 发现 ${qaItems.length}</div>
+  `;
+  document.getElementById('done-count').textContent = done.length;
+  const pct = Math.round((done.length / tasks.length) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  // Board
+  const board = document.getElementById('board');
+
+  // Done column
+  board.innerHTML = renderColumn('✅ 已完成', 'done', done);
+
+  // Backlog column (grouped by phase)
+  const phases = {};
+  nonQaBacklog.forEach(t => {
+    const key = t.phase === 3 ? 'Phase 3: 闭环' : t.phase === 2 ? 'Phase 2: 规范化' : t.phase === 1 ? 'Phase 1: 抽离' : '基础';
+    if (!phases[key]) phases[key] = [];
+    phases[key].push(t);
+  });
+
+  let backlogHTML = '';
+  for (const [phase, items] of Object.entries(phases)) {
+    backlogHTML += `<div class="phase-section"><div class="phase-label">${phase} (${items.length})</div>`;
+    backlogHTML += items.map(renderCard).join('');
+    backlogHTML += '</div>';
+  }
+  board.innerHTML += `<div class="column"><div class="column-header"><div class="dot backlog"></div><h2>📋 待开发</h2><span class="count">${nonQaBacklog.length} 项</span></div>${backlogHTML}</div>`;
+
+  // QA column
+  board.innerHTML += `<div class="column"><div class="column-header"><div class="dot qa"></div><h2>🔍 QA 发现</h2><span class="count">${qaItems.length} 项</span></div>${qaItems.length ? qaItems.map(renderCard).join('') : '<div class="empty">暂无</div>'}</div>`;
+}
+
+function renderColumn(title, type, tasks) {
+  let html = `<div class="column"><div class="column-header"><div class="dot ${type}"></div><h2>${title}</h2><span class="count">${tasks.length} 项</span></div>`;
+  if (tasks.length === 0) { html += '<div class="empty">暂无</div>'; }
+  else {
+    const phases = {};
+    tasks.forEach(t => {
+      const key = t.phase === 0 ? 'Phase 0: 准备' : t.phase === 1 ? 'Phase 1: 抽离' : '基础';
+      if (!phases[key]) phases[key] = [];
+      phases[key].push(t);
+    });
+    for (const [phase, items] of Object.entries(phases)) {
+      html += `<div class="phase-section"><div class="phase-label">${phase}</div>`;
+      html += items.map(renderCard).join('');
+      html += '</div>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderCard(t) {
+  const deps = t.deps && t.deps.length > 0
+    ? `<div class="card-deps">依赖: ${t.deps.map(d => `<span>${d}</span>`).join('')}</div>`
+    : '';
+  return `<div class="card">
+    <div class="card-header">
+      <span class="badge ${t.priority}">${t.priority}</span>
+      <span class="card-title">${t.id} ${t.title}</span>
+    </div>
+    <div class="card-meta">
+      <span>👤 ${t.owner}</span>
+      <span>📌 Loop ${t.loop}</span>
+    </div>
+    <div class="card-notes">${t.notes || ''}</div>
+    ${deps}
+  </div>`;
+}
+
+load();
+</script>
+</body>
+</html>
